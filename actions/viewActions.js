@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import * as Logger from '../logger.js';
 
 const NAUTILUS_PREFS = 'org.gnome.nautilus.preferences';
 
@@ -16,7 +17,7 @@ function gsettingsSet(key, value) {
     try {
         _getSettings().set_string(key, value);
     } catch (e) {
-        console.error(`[appmenu] gsettings error: ${e}`);
+        Logger.error(`gsettings error: ${e}`);
     }
 }
 
@@ -25,7 +26,7 @@ function gsettingsToggle(key) {
         const s = _getSettings();
         s.set_boolean(key, !s.get_boolean(key));
     } catch (e) {
-        console.error(`[appmenu] gsettings error: ${e}`);
+        Logger.error(`gsettings error: ${e}`);
     }
 }
 
@@ -50,6 +51,10 @@ function toggleNautilusSetting(key) {
     const newValue = !current;
     gsettingsToggle(key);
     GLib.spawn_command_line_async(`gsettings set org.gnome.nautilus.preferences ${key} ${newValue}`);
+}
+
+export function disposeViewActions() {
+    _settingsInstance = null;
 }
 
 export const viewActions = {

@@ -2,11 +2,11 @@
 
 <div align="center">
 
-**A macOS-style global menu bar for GNOME Shell**
+**A zero-dependency macOS-style global menu bar for GNOME Shell**
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3-orange)](metadata.json)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v4-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -14,110 +14,111 @@
   <img src="screenshot.png" alt="AppMenu screenshot" width="900" />
 </p>
 
-AppMenu brings a clean macOS-style menu bar to the GNOME top panel. It adds an Apple menu, app-aware menus, window controls, quick navigation, keyboard shortcuts, and fast user switching in one lightweight GNOME Shell extension.
+AppMenu brings a macOS-style menu bar to the GNOME top panel without external daemons, GTK module hacks, or background services. It provides app-aware menus, keyboard shortcuts, recent items, workspace controls, Spotlight-style search, and fast user switching in one lightweight GNOME Shell extension.
+
+## Why AppMenu
+
+- **No external daemon**: pure GJS extension, no Python service or appmenu daemon
+- **No GTK module setup**: no `~/.gtkrc-2.0`, no GTK module injection, no startup helper
+- **Works across app toolkits**: GTK, Qt, Electron, Flatpak, browsers, terminals, and Java apps all get the same menu actions
+- **Wayland-friendly**: uses GNOME Shell APIs and virtual keyboard events instead of X11-only menu scraping
+- **Focused on reliability**: stable app-independent actions instead of fragile real-menu extraction
 
 ## Highlights
 
-- macOS-style top panel menu experience for GNOME
-- Apple menu with system actions and recent items
+- Apple menu with system actions, recent items, and Search
 - Dynamic app menu based on the focused window
 - File, Edit, View, Go, Window, and Help menus
+- Workspace navigation and window-to-workspace actions
+- Optional macOS-style workspace dots in the panel
+- Spotlight-style search dialog for apps, recent files, and settings
 - Fast user switching with avatars and session badges
 - Configurable distro icon or Apple logo
+- Debug logging toggle for troubleshooting
 - GNOME Shell 45 to 50 support
 
 ## Features
 
 ### Apple Menu
 
-The leftmost menu provides quick access to:
-
 - About This Computer
 - System Settings
+- App Store
 - Recent Items
+- Search
 - Force Quit
-- Sleep
-- Restart
-- Shut Down
-- Lock Screen
-- Log Out
+- Sleep, Restart, Shut Down
+- Lock Screen, Log Out
 
 ### Global Menu Bar
 
 | Menu | What it includes |
 |---|---|
-| **App** | About, Hide, Hide Others, Show All, Quit, open windows list |
-| **File** | New Folder, Open, Save, Rename, Print, Eject, Connect to Server |
-| **Edit** | Undo, Redo, Cut, Copy, Paste, Select All, Emoji & Symbols |
-| **View** | Show Hidden Files, Reload, icon size controls, sort options |
-| **Go** | Back, Forward, Recents, Documents, Desktop, Downloads, Home, Computer |
-| **Window** | Minimize, Maximize, Close, Full Screen, Tile Left, Tile Right, Show All, Bring All to Front, Zoom |
-| **Help** | Help, App Details, Report an Issue |
+| **App** | About, New Window, App Details, Quit, open windows list |
+| **File** | New Folder, New Tab, Open, Open With, Print, Get Info, Rename, Find, Trash, Eject |
+| **Edit** | Undo, Redo, Cut, Copy, Paste, Delete, Select All, Emoji & Symbols |
+| **View** | Icon/List view, sorting, reverse sort, path bar, hidden files, full screen |
+| **Go** | Back, Forward, Recents, Documents, Desktop, Downloads, Home, Computer, Network |
+| **Window** | Minimize, Maximize, Tile, workspace switching, move window between workspaces, close |
+| **Help** | Feedback and GNOME Help |
 
-### Fast User Switching
+### Spotlight-Style Search
 
-- User avatars in the right side of the panel
-- Session badges for logged-in users
-- Quick switching between user sessions
-- GDM support for login-window access where available
+Open AppMenu Search from the Apple menu or with `Ctrl+Space`.
 
-### Context-Aware Behavior
+Search sources:
 
-- Shows the focused application's name in the panel
-- Rebuilds menus when focus changes
-- Adds an open windows section when an app has multiple windows
-- Supports app blacklisting to suppress the menu for selected apps
+- Installed applications
+- Recent files
+- GNOME Settings panels
 
-### Keyboard Shortcuts
+### Workspace Controls
 
-The Edit menu sends real keyboard events through `Clutter.InputDevice`, so shortcuts work across many GTK, Electron, browser, and terminal apps.
+The Window menu includes:
 
-Supported shortcuts:
+- Previous Workspace
+- Next Workspace
+- Move Window Left
+- Move Window Right
 
-- `Ctrl+C` Copy
-- `Ctrl+V` Paste
-- `Ctrl+X` Cut
-- `Ctrl+Z` Undo
-- `Ctrl+Shift+Z` Redo
-- `Ctrl+A` Select All
-- `Ctrl+Shift+E` Emoji picker
+Enable **Show Workspace Indicator** in preferences to show macOS-style workspace dots in the panel.
 
-## Performance
+## AppMenu vs Other GNOME Menu Extensions
 
-AppMenu is designed to stay lightweight:
+| Feature | AppMenu | Fildem | global-menu-for-gnome | Kiwi Menu |
+|---|---:|---:|---:|---:|
+| Pure GNOME Shell extension | Yes | No | Yes | Yes |
+| External daemon required | No | Yes | No | No |
+| GTK module setup required | No | Yes | No | No |
+| Works with GTK/Qt/Electron/Flatpak apps | Yes | Partial | Partial | N/A |
+| Recent items | Yes | No | No | Yes |
+| Fast user switching | Yes | No | No | No |
+| Workspace indicator/actions | Yes | No | No | No |
+| Spotlight-style search | Yes | HUD only | No | No |
+| One-shot installers | Yes | Yes | No | No |
 
-- Debounced focus events to avoid rebuild storms during rapid window switching
-- Reuse of existing panel widgets instead of recreating them repeatedly
-- Cached static menu definitions for lower overhead
-- Cached blacklist lookups for fast filtering
-- Cached virtual keyboard device for shortcut actions
-
-## Requirements
-
-- GNOME Shell 45, 46, 47, 48, 49, or 50
-- Wayland or X11
-- GDM is optional and only affects some user-switching features
+AppMenu does **not** try to extract real app menus. That approach is fragile on GTK4, Qt, Electron, Java, Flatpak, and Wayland. Instead, AppMenu provides stable macOS-style actions that work across apps through GNOME Shell APIs and keyboard shortcuts.
 
 ## Installation
 
-### Quick Packages
+### From GNOME Extensions
 
-You can install AppMenu using release artifacts:
+Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- **`AppMenu-e.g.o-upload-v3.zip`**: upload package for [extensions.gnome.org](https://extensions.gnome.org/upload/)
-- **`appmenu@ChathurangaBW.zip`**: extension package for manual GNOME Shell installation
-- **`AppMenu-v3-linux.run`** or **`AppMenu-v3-linux.bin`**: one-shot self-extracting installer
-- **`appmenu_3_all.deb`**: Debian and Ubuntu package
+- `AppMenu-e.g.o-upload-v4.zip`
 
-### Upload to extensions.gnome.org
+This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
-Use a ZIP that has `metadata.json` and `extension.js` at the archive root.
+### Release Packages
 
-If you are uploading manually, use the dedicated upload package:
+Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- **`AppMenu-e.g.o-upload-v3.zip`**
-
-Do not use the manual install ZIP for the website upload if it contains a top-level folder.
+- `AppMenu-e.g.o-upload-v4.zip`: upload package for extensions.gnome.org
+- `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
+- `AppMenu-v4-linux.run`: one-shot self-extracting installer
+- `AppMenu-v4-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_4_all.deb`: Debian and Ubuntu package
+- `AppMenu-v4.zip`: source snapshot
 
 ### From Source
 
@@ -134,67 +135,59 @@ Then restart GNOME Shell:
 
 ## Configuration
 
-Open the extension preferences with:
+Open preferences with:
 
 ```bash
-gnome-extensions prefs appmenu@ChathurangaBW
+gnome-extensions prefs appmenu@ChathurangaBW.github.io
 ```
 
 Available settings:
 
 | Setting | Description |
 |---|---|
-| **App Blacklist** | Hide the menu bar for specific apps by name or ID |
-| **Menu Icon** | Select a distro icon or the Apple logo |
-| **Lock to Focused App** | Keep the panel app label tied to the focused app |
-| **Show OS Icon** | Toggle the icon shown near the Apple menu |
+| **Show OS icon** | Toggle the logo near the Apple menu |
+| **Icon** | Select a distro icon or Apple logo |
+| **Lock to focused app** | Keep panel app label tied to the focused app |
+| **Show User Switcher** | Show avatar-based fast user switching |
+| **Show Workspace Indicator** | Show macOS-style workspace dots |
+| **Debug Logging** | Enable diagnostic GNOME Shell journal logs |
 
-## Uninstallation
+## Development
+
+Build release packages:
 
 ```bash
-cd AppMenu
-bash uninstall.sh
+./scripts/build-packages.sh
 ```
+
+Generated files go to `dist/`.
 
 ## Project Structure
 
 ```text
 AppMenu/
-├── extension.js                 # Extension entry point
+├── extension.js                 # Extension lifecycle
 ├── menuManager.js               # Panel menu orchestration
-├── prefs.js                     # Preferences window
-├── stylesheet.css               # Extension styling
-├── metadata.json                # Extension metadata
-├── recentItemsSubmenu.js        # Recent items submenu
+├── searchDialog.js              # Spotlight-style search dialog
+├── workspaceIndicator.js        # Workspace dots controller
 ├── userSwitcher.js              # Fast user switching UI
-├── documentTooltip.js           # Tooltip support for recent items
-├── schemas/
-│   └── org.gnome.shell.extensions.appmenu.gschema.xml
-├── actions/
-│   ├── dispatcher.js            # Action dispatch layer
-│   ├── fileActions.js           # File and system actions
-│   ├── keyboardActions.js       # Shortcut simulation
-│   ├── scancodes.js             # Input scan code constants
-│   ├── viewActions.js           # View-related actions
-│   └── windowActions.js         # Window management actions
-├── menus/
-│   ├── appleMenu.js             # Apple menu definition
-│   ├── appMenu.js               # Dynamic app menu
-│   ├── editMenu.js              # Edit menu
-│   ├── fileMenu.js              # File menu
-│   ├── goMenu.js                # Go menu
-│   ├── helpMenu.js              # Help menu
-│   ├── viewMenu.js              # View menu
-│   └── windowMenu.js            # Window menu
+├── recentItemsSubmenu.js        # Recent items submenu
+├── documentTooltip.js           # Recent item tooltip support
+├── logger.js                    # Debug-gated logging
+├── prefs.js                     # Preferences window
+├── stylesheet.css               # Shell styling
+├── schemas/                     # GSettings schema
+├── actions/                     # Action handlers
+├── menus/                       # Menu definitions
 ├── icons/                       # SVG icons
-├── install.sh                   # Install helper
-├── uninstall.sh                 # Uninstall helper
-└── screenshot.png               # README screenshot
+├── scripts/build-packages.sh    # Release package builder
+├── install.sh
+└── uninstall.sh
 ```
 
 ## License
 
-MIT © ChathurangaBW
+GPL-3.0-or-later © ChathurangaBW
 
 <div align="center">
   <sub>Built for GNOME. Inspired by macOS.</sub>

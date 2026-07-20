@@ -83,5 +83,21 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         });
         settings.bind('show-user-switcher', showUserSwitcherRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showUserSwitcherRow);
+
+        // Show workspace indicator
+        const showWorkspaceIndicatorRow = new Adw.SwitchRow({
+            title: 'Show Workspace Indicator',
+            subtitle: 'Show macOS-style workspace dots in the top panel.',
+        });
+        settings.bind('show-workspace-indicator', showWorkspaceIndicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(showWorkspaceIndicatorRow);
+
+        // Debug logging
+        const debugLoggingRow = new Adw.SwitchRow({
+            title: 'Debug Logging',
+            subtitle: 'Write diagnostic AppMenu logs to the GNOME Shell journal.',
+        });
+        settings.bind('debug-logging', debugLoggingRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(debugLoggingRow);
     }
 }

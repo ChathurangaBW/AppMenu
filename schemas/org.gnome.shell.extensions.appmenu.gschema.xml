@@ -26,5 +26,25 @@
       <summary>Show User Switcher</summary>
       <description>Show the user switcher button in the top panel for fast user switching.</description>
     </key>
+    <key name="debug-logging" type="b">
+      <default>false</default>
+      <summary>Debug Logging</summary>
+      <description>Write AppMenu diagnostic logs to the GNOME Shell journal. Keep disabled for normal use.</description>
+    </key>
+    <key name="show-workspace-indicator" type="b">
+      <default>false</default>
+      <summary>Show Workspace Indicator</summary>
+      <description>Show macOS-style workspace dots in the top panel.</description>
+    </key>
+    <key name="workspace-indicator-position" type="s">
+      <default>'right'</default>
+      <summary>Workspace Indicator Position</summary>
+      <description>Panel side for the workspace indicator. Supported values: left, right.</description>
+    </key>
+    <key name="search-shortcut" type="as">
+      <default>['&lt;Control&gt;space']</default>
+      <summary>Search Shortcut</summary>
+      <description>Keyboard shortcut used to open AppMenu Search.</description>
+    </key>
   </schema>
 </schemalist>

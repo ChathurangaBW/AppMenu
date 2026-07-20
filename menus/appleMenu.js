@@ -10,6 +10,7 @@ export function buildAppleMenu() {
         { label: "App Store", action: "app-store" },
         { type: "separator" },
         { type: "recent-submenu", label: "Recent Items" },
+        { label: "Search...", action: "open-search" },
         { type: "separator" },
         { label: "Force Quit...", action: "force-quit" },
         { type: "separator" },

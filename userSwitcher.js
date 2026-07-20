@@ -19,7 +19,8 @@ import {Avatar as UserAvatar} from 'resource:///org/gnome/shell/ui/userWidget.js
 // on non-GDM display managers (LightDM, SDDM, console-only, etc.)
 let _Gdm = null;
 try {
-    // `imports` is a GJS global for runtime GI imports (fails at runtime, not parse-time)
+    // Dynamic runtime import is intentional: some systems use LightDM/SDDM and do not ship the GDM typelib.
+    // A static ES import would crash the extension at parse time on those systems.
     _Gdm = imports.gi.Gdm;
 } catch (_e) {
     // GDM typelib not available — extension still loads, just can't switch sessions

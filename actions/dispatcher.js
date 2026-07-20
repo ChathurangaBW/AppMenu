@@ -2,6 +2,8 @@ import { windowActions } from './windowActions.js';
 import { fileActions } from './fileActions.js';
 import { viewActions } from './viewActions.js';
 import { executeKeyboardAction } from './keyboardActions.js';
+import * as Logger from '../logger.js';
+import { toggleSearchDialog } from '../searchDialog.js';
 
 /**
  * Action dispatcher — registry of all named actions.
@@ -22,6 +24,10 @@ const registry = { ...windowActions, ...fileActions, ...viewActions };
  * Returns true if handled.
  */
 export function dispatch(actionStr, ctx, manager) {
+    if (actionStr === 'open-search') {
+        toggleSearchDialog();
+        return true;
+    }
     const colonIdx = actionStr.indexOf(':');
     const action = colonIdx === -1 ? actionStr : actionStr.slice(0, colonIdx);
     const param = colonIdx === -1 ? null : actionStr.slice(colonIdx + 1);
@@ -32,11 +38,11 @@ export function dispatch(actionStr, ctx, manager) {
             // Await-aware: wrap handler call so async handlers don't silently reject
             const result = handler(ctx, param, manager);
             if (result && typeof result.then === 'function') {
-                result.catch(e => console.error(`[appmenu] Action "${action}" failed: ${e}`));
+                result.catch(e => Logger.error(`Action "${action}" failed: ${e}`));
             }
             return true;
         } catch (e) {
-            console.error(`[appmenu] Action "${action}" failed: ${e}`);
+            Logger.error(`Action "${action}" failed: ${e}`);
             return false;
         }
     }
@@ -44,6 +50,6 @@ export function dispatch(actionStr, ctx, manager) {
     // Fallback: keyboard-simulated shortcuts
     if (executeKeyboardAction(action, manager)) return true;
 
-    console.warn(`[appmenu] Unknown action: "${action}"`);
+    Logger.warn(`Unknown action: "${action}"`);
     return false;
 }

@@ -1,5 +1,6 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import * as Logger from '../logger.js';
 
 const HOME = GLib.get_home_dir();
 const specialDir = (d) => GLib.get_user_special_dir(d) || `${HOME}/${d === GLib.UserDirectory.DIRECTORY_DOCUMENTS ? 'Documents' : d === GLib.UserDirectory.DIRECTORY_DESKTOP ? 'Desktop' : 'Downloads'}`;
@@ -81,13 +82,13 @@ async function getRemovableDrives() {
                             drives.push(currentDrive);
                         }
                     } catch (e) {
-                        console.error(`[appmenu] Failed to parse udisksctl output: ${e}`);
+                        Logger.error(`Failed to parse udisksctl output: ${e}`);
                     }
                     resolve(drives);
                 });
             });
         } catch (e) {
-            console.error(`[appmenu] Failed to run udisksctl: ${e}`);
+            Logger.error(`Failed to run udisksctl: ${e}`);
             resolve([]);
         }
     });
@@ -118,17 +119,17 @@ async function ejectDevice(device) {
                             source.finish(result);
                             resolve(true);
                         } catch (e) {
-                            console.error(`[appmenu] Failed to power off device: ${e}`);
+                            Logger.error(`Failed to power off device: ${e}`);
                             resolve(false);
                         }
                     });
                 } catch (e) {
-                    console.error(`[appmenu] Failed to unmount device: ${e}`);
+                    Logger.error(`Failed to unmount device: ${e}`);
                     resolve(false);
                 }
             });
         } catch (e) {
-            console.error(`[appmenu] Failed to eject device: ${e}`);
+            Logger.error(`Failed to eject device: ${e}`);
             resolve(false);
         }
     });
@@ -148,7 +149,7 @@ export const fileActions = {
     'log-out': () => GLib.spawn_command_line_async('gnome-session-quit'),
 
     // Finder Menu
-    'open-settings-ext': () => GLib.spawn_command_line_async('gnome-extensions prefs appmenu@ChathurangaBW'),
+    'open-settings-ext': () => GLib.spawn_command_line_async('gnome-extensions prefs appmenu@ChathurangaBW.github.io'),
     // hide-app, hide-others, show-all — moved to windowActions.js (direct JS eval)
 
     // File Menu
@@ -163,7 +164,7 @@ export const fileActions = {
         // Eject - show list of removable drives and eject them
         const drives = await getRemovableDrives();
         if (drives.length === 0) {
-            console.log('[appmenu] No removable drives found');
+            Logger.debug('No removable drives found');
             return;
         }
 

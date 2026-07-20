@@ -116,3 +116,55 @@
     border: 1px solid;
     border-color: lightgray;
 }
+
+
+/* Workspace indicator */
+.appmenu-workspace-indicator-button {
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.appmenu-workspace-indicator-label {
+    font-size: 10pt;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 0 6px;
+}
+
+
+/* AppMenu Search */
+.appmenu-search-dialog {
+    width: 540px;
+}
+
+.appmenu-search-entry {
+    min-height: 42px;
+    border-radius: 14px;
+    padding: 8px 14px;
+    font-size: 14pt;
+}
+
+.appmenu-search-results {
+    margin-top: 10px;
+    spacing: 6px;
+}
+
+.appmenu-search-result {
+    border-radius: 10px;
+    padding: 9px 12px;
+}
+
+.appmenu-search-result:hover,
+.appmenu-search-result:focus {
+    background-color: rgba(128, 128, 128, 0.18);
+}
+
+.appmenu-search-result-title {
+    font-weight: bold;
+}
+
+.appmenu-search-result-subtitle,
+.appmenu-search-empty {
+    color: -st-dim-text;
+    font-size: 9pt;
+}

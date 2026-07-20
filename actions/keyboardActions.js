@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import * as SC from './scancodes.js';
+import * as Logger from '../logger.js';
 
 // Each entry: [modifierScanCode, actionScanCode, useModifier]
 // useModifier=false means only the action key is pressed (no Ctrl/Shift/Alt held)
@@ -78,7 +79,7 @@ export function executeKeyboardAction(action, manager) {
             if (device) simulateNativeOpenWith(device, manager);
             return true;
         } catch (e) {
-            console.error(`[appmenu] Virtual keyboard error: ${e}`);
+            Logger.error(`Virtual keyboard error: ${e}`);
             return false;
         }
     }
@@ -94,7 +95,7 @@ export function executeKeyboardAction(action, manager) {
         if (device) simulateShortcut(device, entry[0], entry[1], entry[2]);
         return true;
     } catch (e) {
-        console.error(`[appmenu] Virtual keyboard error: ${e}`);
+        Logger.error(`Virtual keyboard error: ${e}`);
         return false;
     }
 }

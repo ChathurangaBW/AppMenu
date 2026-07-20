@@ -1,7 +1,14 @@
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { MenuManager } from './menuManager.js';
 import { UserSwitcherController } from './userSwitcher.js';
+import { setLoggerSettings, debug } from './logger.js';
+import { disposeViewActions } from './actions/viewActions.js';
+import { WorkspaceIndicatorController } from './workspaceIndicator.js';
+import { toggleSearchDialog, destroySearchDialog } from './searchDialog.js';
 
 const FOCUS_DEBOUNCE_MS = 50;
 
@@ -13,26 +20,52 @@ export default class AppMenuExtension extends Extension {
         this._focusTimeoutId = 0;
         this._focusedWindow = null;
         this._userSwitcherController = null;
+        this._workspaceIndicatorController = null;
+        this._searchShortcutInstalled = false;
     }
 
     enable() {
-        console.log(`[appmenu@ChathurangaBW] Enabling extension.`);
-
         this._settings = this.getSettings('org.gnome.shell.extensions.appmenu');
+        setLoggerSettings(this._settings);
+        debug('Enabling extension.');
+
         this._focusedWindow = null;
 
-        const uuid = this.metadata.uuid || 'appmenu@ChathurangaBW';
+        const uuid = this.metadata.uuid || 'appmenu@ChathurangaBW.github.io';
         this._menuManager = new MenuManager(uuid, this._settings);
 
-        let initialWindow = global.display.get_focus_window();
+        const initialWindow = global.display.get_focus_window();
         this._updateMenu(initialWindow);
 
         global.display.connectObject('notify::focus-window', () => {
             this._scheduleMenuUpdate();
         }, this);
 
-        // User switcher (right side of panel)
         this._userSwitcherController = new UserSwitcherController(this, this._settings);
+        this._workspaceIndicatorController = new WorkspaceIndicatorController(this._settings);
+        this._addSearchKeybinding();
+    }
+
+    _addSearchKeybinding() {
+        if (!this._settings || this._searchShortcutInstalled)
+            return;
+
+        Main.wm.addKeybinding(
+            'search-shortcut',
+            this._settings,
+            Meta.KeyBindingFlags.NONE,
+            Shell.ActionMode.NORMAL,
+            () => toggleSearchDialog()
+        );
+        this._searchShortcutInstalled = true;
+    }
+
+    _removeSearchKeybinding() {
+        if (!this._searchShortcutInstalled)
+            return;
+
+        Main.wm.removeKeybinding('search-shortcut');
+        this._searchShortcutInstalled = false;
     }
 
     _updateMenu(window) {
@@ -43,14 +76,10 @@ export default class AppMenuExtension extends Extension {
             : true;
 
         if (lockEnabled) {
-            // Only update if the focused window actually changed
-            if (window === this._focusedWindow) {
+            if (window === this._focusedWindow)
                 return;
-            }
-            // If window is null (e.g., hovering over panel), keep previous menu
-            if (window === null) {
+            if (window === null)
                 return;
-            }
             this._focusedWindow = window;
         } else {
             this._focusedWindow = window;
@@ -60,15 +89,15 @@ export default class AppMenuExtension extends Extension {
     }
 
     _scheduleMenuUpdate() {
-        if (this._focusTimeoutId) {
+        if (this._focusTimeoutId)
             GLib.source_remove(this._focusTimeoutId);
-        }
+
         this._focusTimeoutId = GLib.timeout_add(
             GLib.PRIORITY_DEFAULT,
             FOCUS_DEBOUNCE_MS,
             () => {
                 this._focusTimeoutId = 0;
-                let activeWindow = global.display.get_focus_window();
+                const activeWindow = global.display.get_focus_window();
                 this._updateMenu(activeWindow);
                 return GLib.SOURCE_REMOVE;
             }
@@ -76,9 +105,11 @@ export default class AppMenuExtension extends Extension {
     }
 
     disable() {
-        console.log(`[appmenu@ChathurangaBW] Disabling extension.`);
+        debug('Disabling extension.');
 
         global.display.disconnectObject(this);
+        this._removeSearchKeybinding();
+        destroySearchDialog();
 
         if (this._focusTimeoutId) {
             GLib.source_remove(this._focusTimeoutId);
@@ -97,8 +128,13 @@ export default class AppMenuExtension extends Extension {
             this._userSwitcherController = null;
         }
 
-        if (this._settings) {
-            this._settings = null;
+        if (this._workspaceIndicatorController) {
+            this._workspaceIndicatorController.destroy();
+            this._workspaceIndicatorController = null;
         }
+
+        disposeViewActions();
+        setLoggerSettings(null);
+        this._settings = null;
     }
 }

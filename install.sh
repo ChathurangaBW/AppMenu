@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXTENSION_UUID="appmenu@ChathurangaBW"
+EXTENSION_UUID="appmenu@ChathurangaBW.github.io"
 EXTENSION_DIR="$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -19,6 +19,9 @@ cp -rv "$SOURCE_DIR/menuManager.js" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/recentItemsSubmenu.js" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/documentTooltip.js" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/userSwitcher.js" "$EXTENSION_DIR/"
+cp -rv "$SOURCE_DIR/workspaceIndicator.js" "$EXTENSION_DIR/"
+cp -rv "$SOURCE_DIR/searchDialog.js" "$EXTENSION_DIR/"
+cp -rv "$SOURCE_DIR/logger.js" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/prefs.js" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/stylesheet.css" "$EXTENSION_DIR/"
 cp -rv "$SOURCE_DIR/actions" "$EXTENSION_DIR/"

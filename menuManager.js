@@ -17,6 +17,7 @@ import { buildGoMenu } from './menus/goMenu.js';
 import { buildWindowMenu } from './menus/windowMenu.js';
 import { buildHelpMenu } from './menus/helpMenu.js';
 import { RecentItemsSubmenu } from './recentItemsSubmenu.js';
+import * as Logger from './logger.js';
 
 // Distro icon map — local symbolic SVG icons for panel-friendly display
 const DISTRO_ICONS = {
@@ -79,7 +80,7 @@ const EXTENSION_ICONS_DIR = (() => {
     return GLib.build_filenamev([
         GLib.get_home_dir(),
         '.local', 'share', 'gnome-shell', 'extensions',
-        'appmenu@ChathurangaBW', 'icons'
+        'appmenu@ChathurangaBW.github.io', 'icons'
     ]);
 })();
 
@@ -291,7 +292,7 @@ export class MenuManager {
                 const seat = Clutter.get_default_backend().get_default_seat();
                 this._virtualDevice = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             } catch (e) {
-                console.error(`[appmenu] Failed to create virtual device: ${e}`);
+                Logger.error(`Failed to create virtual device: ${e}`);
             }
         }
         return this._virtualDevice;

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXTENSION_UUID="appmenu@ChathurangaBW"
+EXTENSION_UUID="appmenu@ChathurangaBW.github.io"
 EXTENSION_DIR="$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 
 echo "--------------------------------------------------"
