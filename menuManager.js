@@ -107,7 +107,10 @@ const TopLevelMenuButton = GObject.registerClass(
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
         this._iconSize = this._menuManagerInstance?._cachedIconSize ?? 22;
-        this._titleWidget = new St.Bin({ style_class: 'system-status-icon' });
+        this._titleWidget = new St.Icon({
+            icon_size: this._iconSize,
+            style_class: 'system-status-icon',
+        });
         this.add_child(this._titleWidget);
         this._loadIcon(label);
       } else {
@@ -159,25 +162,11 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _loadIcon(label) {
         if (!this._titleWidget || !label) return;
-        const size = this._menuManagerInstance?._cachedIconSize ?? 22;
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
-            const sIcon = new St.Icon({
-                gicon: Gio.FileIcon.new(iconFile),
-                icon_size: size,
-                style_class: 'system-status-icon',
-            });
-            const old = this._titleWidget.get_child();
-            if (old) this._titleWidget.remove_child(old);
-            this._titleWidget.set_child(sIcon);
-        }
-    }
-
-    refreshIconSize() {
-        if (this._isIcon) {
-            const label = this._menuManagerInstance?._menuIcon ?? this._menuManagerInstance?._distroIcon ?? '';
-            this._loadIcon(label);
+            this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile));
+            this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
         }
     }
 
@@ -309,8 +298,12 @@ export class MenuManager {
                     this._cachedIconSize = Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22));
                     this._lastAppId = null;
                     this._lastWindowId = null;
-                    if (this._buttons.length > 0)
-                        this._buttons[0].refreshIconSize();
+                    if (this._buttons.length > 0) {
+                        const btn0 = this._buttons[0];
+                        if (btn0._isIcon && btn0._titleWidget) {
+                            btn0._titleWidget.set_icon_size(this._cachedIconSize);
+                        }
+                    }
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
             ];
