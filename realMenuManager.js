@@ -8,47 +8,182 @@ const REGISTRAR_OBJECT_PATH = '/com/canonical/AppMenu/Registrar';
 const REGISTRAR_INTERFACE = 'com.canonical.AppMenu.Registrar';
 const GTK_ACTIONS_INTERFACE = 'org.gtk.Actions';
 
-const ACTION_LABELS = new Map([
+// ── well-known action → human label ──────────────────────────────────────
+const KNOWN_LABELS = new Map([
+    // App menu
     ['about', 'About'],
     ['preferences', 'Settings'],
+    ['options', 'Settings'],
     ['quit', 'Quit'],
+    ['exit', 'Quit'],
+    ['close', 'Close'],
     ['help', 'Help'],
+    ['keyboard-shortcuts', 'Keyboard Shortcuts'],
     ['shortcuts', 'Keyboard Shortcuts'],
+    ['make-default', 'Make Default'],
+    ['show-diagnostics', 'Diagnostics'],
+
+    // File menu
     ['new-window', 'New Window'],
     ['clone-window', 'New Window'],
     ['tepl-new-window', 'New Window'],
     ['new-tab', 'New Tab'],
     ['new-document', 'New Document'],
+    ['open', 'Open…'],
+    ['open-document', 'Open…'],
+    ['open-recent', 'Open Recent'],
+    ['save', 'Save'],
+    ['save-as', 'Save As…'],
+    ['save-copy', 'Save a Copy…'],
+    ['save-all', 'Save All'],
+    ['revert', 'Revert'],
+    ['print', 'Print…'],
+    ['print-preview', 'Print Preview'],
+    ['page-setup', 'Page Setup…'],
+    ['export', 'Export…'],
+    ['export-as', 'Export As…'],
+    ['import', 'Import…'],
+    ['send-to', 'Send To…'],
+    ['share', 'Share…'],
+    ['close-tab', 'Close Tab'],
+    ['close-window', 'Close Window'],
+    ['close-all', 'Close All'],
     ['show-file-transfers', 'File Transfers'],
     ['search-settings', 'Search Settings'],
-    ['make-default', 'Make Default'],
+    ['properties', 'Properties'],
+
+    // Edit menu
+    ['undo', 'Undo'],
+    ['redo', 'Redo'],
+    ['cut', 'Cut'],
+    ['copy', 'Copy'],
+    ['paste', 'Paste'],
+    ['paste-special', 'Paste Special'],
+    ['delete', 'Delete'],
+    ['select-all', 'Select All'],
+    ['deselect', 'Deselect'],
+    ['find', 'Find…'],
+    ['find-replace', 'Find and Replace…'],
+    ['find-next', 'Find Next'],
+    ['find-previous', 'Find Previous'],
+    ['replace', 'Replace…'],
+    ['go-to-line', 'Go to Line…'],
+    ['go-to', 'Go To…'],
+    ['clear-history', 'Clear History'],
+    ['remove-recent', 'Clear Recent'],
+    ['insert-emoji', 'Emoji & Symbols'],
+    ['insert-symbol', 'Insert Symbol'],
+
+    // View menu
+    ['zoom-in', 'Zoom In'],
+    ['zoom-out', 'Zoom Out'],
+    ['zoom-default', 'Actual Size'],
+    ['zoom-normal', 'Actual Size'],
+    ['zoom-reset', 'Actual Size'],
+    ['fullscreen', 'Full Screen'],
+    ['toggle-fullscreen', 'Full Screen'],
+    ['reload', 'Reload'],
+    ['refresh', 'Refresh'],
+    ['show-menubar', 'Show Menu Bar'],
+    ['show-toolbar', 'Show Toolbar'],
+    ['show-statusbar', 'Show Status Bar'],
+    ['show-sidebar', 'Show Sidebar'],
+    ['show-side-panel', 'Show Side Panel'],
+    ['show-tabs', 'Show Tabs'],
+    ['show-hidden-files', 'Show Hidden Files'],
+    ['show-details', 'Show Details'],
+    ['show-grid', 'Show as Grid'],
+    ['show-list', 'Show as List'],
+    ['sort-ascending', 'Sort Ascending'],
+    ['sort-descending', 'Sort Descending'],
+    ['sort-by-name', 'Sort by Name'],
+    ['sort-by-date', 'Sort by Date'],
+    ['sort-by-size', 'Sort by Size'],
+    ['sort-by-type', 'Sort by Type'],
+    ['filter', 'Filter…'],
+    ['style-scheme', 'Color Scheme'],
+
+    // Format / Text
+    ['bold', 'Bold'],
+    ['italic', 'Italic'],
+    ['underline', 'Underline'],
+    ['strikethrough', 'Strikethrough'],
+    ['font', 'Font…'],
+    ['text-direction', 'Text Direction'],
+    ['align-left', 'Align Left'],
+    ['align-center', 'Align Center'],
+    ['align-right', 'Align Right'],
+    ['align-justify', 'Justify'],
+    ['indent', 'Indent'],
+    ['unindent', 'Unindent'],
+    ['increase-indent', 'Increase Indent'],
+    ['decrease-indent', 'Decrease Indent'],
+    ['bullet-list', 'Bullet List'],
+    ['numbered-list', 'Numbered List'],
+    ['toggle-list', 'Toggle List'],
+
+    // Tools
+    ['spell-check', 'Spell Check'],
+    ['check-spelling', 'Spell Check'],
+    ['word-count', 'Word Count'],
+    ['document-statistics', 'Document Statistics'],
+    ['highlight-mode', 'Highlight Mode'],
+    ['comment', 'Comment'],
 ]);
 
-const APP_MENU_ACTIONS = new Set([
-    'about',
-    'preferences',
-    'quit',
-    'help',
-    'shortcuts',
-    'make-default',
-]);
+// ── action category matchers ─────────────────────────────────────────────
+function _categoryForAction(name) {
+    const n = name.toLowerCase();
 
-const FILE_MENU_ACTIONS = new Set([
-    'new-window',
-    'clone-window',
-    'tepl-new-window',
-    'new-tab',
-    'new-document',
-    'show-file-transfers',
-    'search-settings',
-]);
+    // App menu actions — exclude help/about (those go to Help menu)
+    if (/^(preferences|options|quit|exit|close$|make-default|show-diagnostics|diagnostics)$/.test(n))
+        return 'app';
 
-const HELP_MENU_ACTIONS = new Set([
-    'help',
-    'shortcuts',
-    'about',
-]);
+    // File actions — prefix-based
+    if (/^(new-|clone-|tepl-|open|save|print|export|import|revert|send-|share|close-tab|close-window|close-all|page-setup|show-file|search-settings|properties)/.test(n))
+        return 'file';
 
+    // Edit actions
+    if (/^(undo|redo|cut|copy|paste|delete|select-all|deselect|find|replace|go-to|clear-history|remove-recent|insert-)/.test(n))
+        return 'edit';
+
+    // View actions
+    if (/^(zoom-|fullscreen|toggle-fullscreen|reload|refresh|show-|sort-|filter|style-scheme)/.test(n))
+        return 'view';
+
+    // Format actions
+    if (/^(bold|italic|underline|strikethrough|font|text-direction|align-|indent|unindent|increase-indent|decrease-indent|bullet-|numbered-|toggle-list)/.test(n))
+        return 'format';
+
+    // Tools
+    if (/^(spell|check-spelling|word-count|document-statistics|highlight-|comment)/.test(n))
+        return 'tools';
+
+    // Help (only when not already in app menu)
+    if (/^(help|about|shortcuts|keyboard-shortcuts)/.test(n))
+        return 'help';
+
+    return 'other';
+}
+
+// ── label helpers ─────────────────────────────────────────────────────────
+function _labelForAction(name) {
+    const known = KNOWN_LABELS.get(name);
+    if (known)
+        return known;
+    return _humanizeActionName(name);
+}
+
+function _humanizeActionName(name) {
+    return String(name ?? '')
+        .replace(/_/g, ' ')
+        .split(/[-.]/g)
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+// ── dbusmenu helpers ──────────────────────────────────────────────────────
 function _normalizeLabel(label) {
     return String(label ?? '')
         .replace(/_/g, '')
@@ -91,6 +226,24 @@ function _getOrnament(item) {
     return 'none';
 }
 
+// ── GTK action state → ornament ──────────────────────────────────────────
+function _gtkActionOrnament(action) {
+    // GTK action state: a GLib.Variant with the current state value.
+    // Boolean true  → check ornament,  a string → radio ornament.
+    if (action.state === undefined || action.state === null)
+        return 'none';
+
+    const typeString = action.state.get_type_string?.() ?? '';
+    if (typeString === 'b') {
+        return action.state.get_boolean() ? 'check' : 'none';
+    }
+    if (typeString === 's') {
+        // radio-like: state is a string (e.g. the selected style scheme)
+        return 'dot';
+    }
+    return 'none';
+}
+
 function _isAppMenuLabel(label, appName) {
     const normalized = _normalizeLabel(label).toLowerCase();
     const normalizedAppName = _normalizeLabel(appName).toLowerCase();
@@ -117,14 +270,7 @@ function _busNameToObjectPath(busName) {
     return `/${busName.replace(/\./g, '/')}`;
 }
 
-function _humanizeActionName(name) {
-    return String(name ?? '')
-        .split(/[-_.]/g)
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-}
-
+// ── RealMenuManager ──────────────────────────────────────────────────────
 export class RealMenuManager {
     constructor(settings, onChanged) {
         this._settings = settings;
@@ -136,6 +282,7 @@ export class RealMenuManager {
         this._currentAppName = '';
         this._backendType = null;
         this._currentGtkContext = null;
+        this._cachedActions = null;
     }
 
     get enabled() {
@@ -147,40 +294,52 @@ export class RealMenuManager {
     }
 
     invalidate() {
+        this._cachedActions = null;
         this._setBackend(null, null);
     }
 
     destroy() {
+        this._cachedActions = null;
         this._setBackend(null, null);
         this._settings = null;
         this._onChanged = null;
     }
 
-    updateForWindow(window, appName = '', detectedApp = null) {
+    updateForWindow(window, appName = '', detectedApp = null, wmClass = '') {
         this._currentAppName = appName;
 
         if (!this.enabled || !window) {
+            this._cachedActions = null;
             this._setBackend(null, null);
             return null;
         }
 
+        // 1) Try the dbusmenu registrar (requires X11 window ID on X11/Xwayland)
         const registration = this._lookupRegistration(window);
         if (registration) {
             const key = `dbusmenu:${registration.service}|${registration.path}`;
+            this._cachedActions = null;
             if (key !== this._currentKey)
                 this._setBackend('dbusmenu', registration);
             return this.buildCurrentMenuModel(appName);
         }
 
-        const gtkContext = this._lookupGtkAppContext(detectedApp);
+        // 2) Fallback to GTK actions — try detectedApp first, then wmClass
+        let gtkContext = this._lookupGtkAppContext(detectedApp);
+        if (!gtkContext && wmClass) {
+            gtkContext = this._lookupGtkAppContext({ get_id: () => wmClass });
+        }
         if (!gtkContext) {
+            this._cachedActions = null;
             this._setBackend(null, null);
             return null;
         }
 
         const key = `gtk:${gtkContext.busName}|${gtkContext.objectPath}`;
-        if (key !== this._currentKey)
+        if (key !== this._currentKey) {
+            this._cachedActions = null;
             this._setBackend('gtk-actions', gtkContext);
+        }
 
         return this.buildCurrentMenuModel(appName);
     }
@@ -192,6 +351,8 @@ export class RealMenuManager {
             return this._buildGtkActionMenuModel();
         return null;
     }
+
+    // ── dbusmenu (registrar) backend ──────────────────────────────────
 
     _buildDbusMenuModel(appName = '') {
         if (!this._client)
@@ -232,6 +393,8 @@ export class RealMenuManager {
         };
     }
 
+    // ── GTK actions backend ───────────────────────────────────────────
+
     _buildGtkActionMenuModel() {
         if (!this._currentGtkContext)
             return null;
@@ -240,30 +403,56 @@ export class RealMenuManager {
         if (actions.length === 0)
             return null;
 
-        const appMenuChildren = this._buildGtkActionItems(actions.filter(action => APP_MENU_ACTIONS.has(action.name)));
-        const fileChildren = this._buildGtkActionItems(actions.filter(action => FILE_MENU_ACTIONS.has(action.name)));
-        const helpChildren = this._buildGtkActionItems(actions.filter(action => HELP_MENU_ACTIONS.has(action.name) && !APP_MENU_ACTIONS.has(action.name)));
-        const remaining = actions.filter(action =>
-            !APP_MENU_ACTIONS.has(action.name)
-            && !FILE_MENU_ACTIONS.has(action.name)
-            && !HELP_MENU_ACTIONS.has(action.name)
-        );
+        // Categorize every action
+        const buckets = {
+            app: [],
+            file: [],
+            edit: [],
+            view: [],
+            format: [],
+            tools: [],
+            help: [],
+            other: [],
+        };
 
-        const appChildren = [...appMenuChildren];
-        if (remaining.length > 0) {
-            if (appChildren.length > 0)
-                appChildren.push({ type: 'separator' });
-            appChildren.push(...this._buildGtkActionItems(remaining));
+        for (const action of actions) {
+            const cat = _categoryForAction(action.name);
+            buckets[cat].push(action);
         }
 
+        // Build items from each bucket
+        const build = (arr) => this._buildGtkActionItems(arr);
+
+        const appItems = build(buckets.app);
+        const fileItems = build(buckets.file);
+        const editItems = build(buckets.edit);
+        const viewItems = build(buckets.view);
+        const formatItems = build(buckets.format);
+        const toolsItems = build(buckets.tools);
+        const helpItems = build(buckets.help);
+        const otherItems = build(buckets.other);
+
+        // Assemble app menu children: app-category items + any unrecognised
+        const appChildren = [...appItems];
+        if (otherItems.length > 0) {
+            if (appChildren.length > 0)
+                appChildren.push({ type: 'separator' });
+            appChildren.push(...otherItems);
+        }
+
+        // Assemble top-level menus
         const topLevelMenus = [];
-        if (fileChildren.length > 0)
-            topLevelMenus.push({ label: 'File', children: fileChildren });
-        if (helpChildren.length > 0)
-            topLevelMenus.push({ label: 'Help', children: helpChildren });
+        if (fileItems.length > 0) topLevelMenus.push({ label: 'File', children: fileItems });
+        if (editItems.length > 0) topLevelMenus.push({ label: 'Edit', children: editItems });
+        if (viewItems.length > 0) topLevelMenus.push({ label: 'View', children: viewItems });
+        if (formatItems.length > 0) topLevelMenus.push({ label: 'Format', children: formatItems });
+        if (toolsItems.length > 0) topLevelMenus.push({ label: 'Tools', children: toolsItems });
+        if (helpItems.length > 0) topLevelMenus.push({ label: 'Help', children: helpItems });
 
         if (appChildren.length === 0 && topLevelMenus.length === 0)
             return null;
+
+        Logger.debug(`gtk-actions: app=${appChildren.length} file=${fileItems.length} edit=${editItems.length} view=${viewItems.length} format=${formatItems.length} tools=${toolsItems.length} help=${helpItems.length} other=${otherItems.length}`);
 
         return {
             registrationKey: this._currentKey,
@@ -271,6 +460,8 @@ export class RealMenuManager {
             topLevelMenus,
         };
     }
+
+    // ── D-Bus lookups ──────────────────────────────────────────────────
 
     _lookupRegistration(window) {
         let windowId = 0;
@@ -283,8 +474,7 @@ export class RealMenuManager {
         if (!windowId)
             return null;
 
-        try {
-            const result = Gio.DBus.session.call_sync(
+        const result = Gio.DBus.session.call_sync(
                 REGISTRAR_BUS_NAME,
                 REGISTRAR_OBJECT_PATH,
                 REGISTRAR_INTERFACE,
@@ -339,6 +529,8 @@ export class RealMenuManager {
 
         return { busName, objectPath, appId };
     }
+
+    // ── backend lifecycle ──────────────────────────────────────────────
 
     _setBackend(kind, registration) {
         this._disposeCurrentBackend();
@@ -395,6 +587,8 @@ export class RealMenuManager {
         }
     }
 
+    // ── GTK action helpers ─────────────────────────────────────────────
+
     _fetchGtkActions(context) {
         try {
             const result = Gio.DBus.session.call_sync(
@@ -433,9 +627,12 @@ export class RealMenuManager {
         if (!action)
             return null;
 
+        const ornament = _gtkActionOrnament(action);
+
         return {
-            label: ACTION_LABELS.get(action.name) ?? _humanizeActionName(action.name),
+            label: _labelForAction(action.name),
             sensitive: action.enabled,
+            ornament,
             activate: () => this._activateGtkAction(action.name),
         };
     }
@@ -460,6 +657,8 @@ export class RealMenuManager {
         }
     }
 
+    // ── signals ────────────────────────────────────────────────────────
+
     _emitChanged() {
         try {
             this._onChanged?.();
@@ -467,6 +666,8 @@ export class RealMenuManager {
             Logger.error(`Real menu change callback failed: ${e}`);
         }
     }
+
+    // ── dbusmenu tree builders ─────────────────────────────────────────
 
     _buildTopLevelDescriptor(item) {
         if (!_isVisible(item))
