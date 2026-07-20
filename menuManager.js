@@ -180,8 +180,6 @@ const TopLevelMenuButton = GObject.registerClass(
             this._loadIcon(label);
         }
     }
-        }
-    }
 
     _setMenuOpenHandler(handler) {
         this._menuOpenHandler = handler;
