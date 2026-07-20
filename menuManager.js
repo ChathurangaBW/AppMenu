@@ -399,7 +399,7 @@ export class MenuManager {
 
         const currentAppId = detectedApp ? detectedApp.get_id() : null;
         const currentWindowId = window?.get_id?.() ?? null;
-        const realMenuData = this._realMenuManager.updateForWindow(window, appName);
+        const realMenuData = this._realMenuManager.updateForWindow(window, appName, detectedApp);
         const realMenuKey = realMenuData?.registrationKey ?? null;
 
         // Skip rebuild if the effective menu state is unchanged
