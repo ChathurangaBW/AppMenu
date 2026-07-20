@@ -32,7 +32,6 @@ AppMenu brings a macOS-style menu bar to the GNOME top panel without external da
 - Workspace navigation and window-to-workspace actions
 - Optional macOS-style workspace dots in the panel
 - Spotlight-style search dialog for apps, recent files, and settings
-- Optional macOS-style wording and layout for Apple, app, and Window menus
 - Fast user switching with avatars and session badges
 - Configurable distro icon or Apple logo
 - Debug logging toggle for troubleshooting
@@ -151,12 +150,7 @@ Available settings:
 | **Lock to focused app** | Keep panel app label tied to the focused app |
 | **Show User Switcher** | Show avatar-based fast user switching |
 | **Show Workspace Indicator** | Show macOS-style workspace dots |
-| **Prefer macOS-Style Labels** | Use more macOS-like wording/layout in Apple, app, and Window menus |
 | **Debug Logging** | Enable diagnostic GNOME Shell journal logs |
-
-## Design Notes
-
-AppMenu now supports a stronger macOS-style presentation mode for menu wording and ordering, but it still intentionally keeps its reliable GNOME-native action model by default instead of depending on external appmenu daemons or toolkit export modules.
 
 ## Development
 

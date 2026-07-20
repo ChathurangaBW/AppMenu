@@ -92,13 +92,6 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         settings.bind('show-workspace-indicator', showWorkspaceIndicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showWorkspaceIndicatorRow);
 
-        const macosStyleRow = new Adw.SwitchRow({
-            title: 'Prefer macOS-Style Labels',
-            subtitle: 'Use more macOS-like wording and layout in the Apple, app, and Window menus.',
-        });
-        settings.bind('prefer-macos-style', macosStyleRow, 'active', Gio.SettingsBindFlags.DEFAULT);
-        group.add(macosStyleRow);
-
         // Debug logging
         const debugLoggingRow = new Adw.SwitchRow({
             title: 'Debug Logging',

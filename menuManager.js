@@ -9,7 +9,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { dispatch } from './actions/dispatcher.js';
 import { buildAppMenu, buildFallbackAppMenu } from './menus/appMenu.js';
-import { buildAppleMenuForMode } from './menus/appleMenu.js';
+import { buildAppleMenu } from './menus/appleMenu.js';
 import { buildFileMenu } from './menus/fileMenu.js';
 import { buildEditMenu } from './menus/editMenu.js';
 import { buildViewMenu } from './menus/viewMenu.js';
@@ -236,7 +236,6 @@ export class MenuManager {
         // Cached settings values (updated via signals, not read per focus change)
         this._cachedMenuIcon = this._settings ? this._settings.get_string('menu-icon') : '';
         this._cachedShowOsIcon = this._settings ? this._settings.get_boolean('show-os-icon') : true;
-        this._cachedPreferMacosStyle = this._settings ? this._settings.get_boolean('prefer-macos-style') : true;
 
         // Cached singletons (avoid repeated get_default() calls)
         this._windowTracker = Shell.WindowTracker.get_default();
@@ -258,10 +257,6 @@ export class MenuManager {
                     // Invalidate app cache so slot 0 updates on next focus change
                     this._lastAppId = null;
                 }),
-                this._settings.connect('changed::prefer-macos-style', () => {
-                    this._cachedPreferMacosStyle = this._settings.get_boolean('prefer-macos-style');
-                    this._lastAppId = null;
-                }),
             ];
         } else {
             this._settingsSignalIds = [];
@@ -276,10 +271,6 @@ export class MenuManager {
 
     get _showOsIcon() {
         return this._cachedShowOsIcon;
-    }
-
-    get _preferMacosStyle() {
-        return this._cachedPreferMacosStyle;
     }
 
     _updateOsIconVisibility() {
@@ -381,11 +372,11 @@ export class MenuManager {
         }
 
         const appChildren = isAppFocused
-            ? buildAppMenu(appName, detectedApp, window, this._preferMacosStyle)
+            ? buildAppMenu(appName, detectedApp, window)
             : buildFallbackAppMenu();
 
-        const windowChildren = buildWindowMenu(window, detectedApp, this._preferMacosStyle);
-        const appleChildren = buildAppleMenuForMode(this._preferMacosStyle);
+        const windowChildren = buildWindowMenu(window, detectedApp);
+        const appleChildren = buildAppleMenu();
 
         // Cache app menu data
         this._lastAppId = currentAppId;
