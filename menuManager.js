@@ -103,9 +103,11 @@ const TopLevelMenuButton = GObject.registerClass(
       this._menuManagerInstance = menuManagerInstance;
       this._isIcon = false;
 
-      // Determine if label is an icon name (e.g. distributor-logo-*)
+      // Determine if label is an icon name (e.g. distributor-logo-ubuntu)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
+        // start-here-symbolic is the standard GNOME icon that every
+        // distro customizes to its own logo (Yaru→Ubuntu, Adwaita→generic, etc.)
         const icon = new St.Icon({
             icon_name: 'start-here-symbolic',
             icon_size: 18,
