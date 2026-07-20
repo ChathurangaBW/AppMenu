@@ -283,9 +283,7 @@ function _findBusNameFromWmClass(wmClass) {
         const result = Gio.DBus.session.call_sync(
             'org.freedesktop.DBus', '/org/freedesktop/DBus',
             'org.freedesktop.DBus', 'ListNames',
-            null, null, Gio.DBusCallFlags.NONE, -1, null
-        );
-        const names = result.deepUnpack()[0];
+            null, null, Gio.DBusCallFlags.NONE, 500, null
 
         // Try exact match first: eg "org.gnome.gedit" for wmClass "gedit"
         for (const name of names) {
@@ -341,7 +339,7 @@ function _probeGtkActions(busName, objectPath, activate = false) {
         const result = Gio.DBus.session.call_sync(
             busName, objectPath,
             GTK_ACTIONS_INTERFACE, 'DescribeAll',
-            null, null, Gio.DBusCallFlags.NONE, activate ? 5000 : -1, null
+            null, null, Gio.DBusCallFlags.NONE, activate ? 5000 : 2000, null
         );
         const [descriptions] = result.deepUnpack();
         if (!descriptions || Object.keys(descriptions).length === 0)
@@ -653,7 +651,7 @@ export class RealMenuManager {
                 null,
                 null,
                 Gio.DBusCallFlags.NONE,
-                -1,
+                2000,
                 null,
             );
             const [descriptions] = result.deepUnpack();
@@ -736,7 +734,7 @@ export class RealMenuManager {
                 null,
                 null,
                 Gio.DBusCallFlags.NONE,
-                -1,
+                2000,
                 null,
             );
             const [descriptions] = result.deepUnpack();
@@ -786,7 +784,7 @@ export class RealMenuManager {
                 new GLib.Variant('(sav@a{sv})', [name, [], new GLib.Variant('a{sv}', {})]),
                 null,
                 Gio.DBusCallFlags.NONE,
-                -1,
+                5000,
                 null,
             );
         } catch (e) {
