@@ -104,9 +104,20 @@ AppMenu is designed to stay lightweight:
 
 You can install AppMenu using release artifacts:
 
+- **`AppMenu-e.g.o-upload-v3.zip`**: upload package for [extensions.gnome.org](https://extensions.gnome.org/upload/)
 - **`appmenu@ChathurangaBW.zip`**: extension package for manual GNOME Shell installation
 - **`AppMenu-v3-linux.run`** or **`AppMenu-v3-linux.bin`**: one-shot self-extracting installer
 - **`appmenu_3_all.deb`**: Debian and Ubuntu package
+
+### Upload to extensions.gnome.org
+
+Use a ZIP that has `metadata.json` and `extension.js` at the archive root.
+
+If you are uploading manually, use the dedicated upload package:
+
+- **`AppMenu-e.g.o-upload-v3.zip`**
+
+Do not use the manual install ZIP for the website upload if it contains a top-level folder.
 
 ### From Source
 
