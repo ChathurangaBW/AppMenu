@@ -163,11 +163,11 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _setIcon(label) {
         if (!this._titleWidget || !label) return;
-        this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
             this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile));
+            this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
         }
     }
 
@@ -297,12 +297,15 @@ export class MenuManager {
                 }),
                 this._settings.connect('changed::icon-size', () => {
                     this._cachedIconSize = Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22));
+                    this._lastAppId = null;
+                    this._lastWindowId = null;
                     if (this._buttons.length > 0) {
                         const btn0 = this._buttons[0];
                         if (btn0._isIcon && btn0._titleWidget) {
                             btn0._titleWidget.set_icon_size(this._cachedIconSize);
                         }
                     }
+                    this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
             ];
         } else {
