@@ -34,7 +34,7 @@
     <key name="show-workspace-indicator" type="b">
       <default>false</default>
       <summary>Show Workspace Indicator</summary>
-      <description>Show macOS-style workspace dots in the top panel.</description>
+      <description>Show workspace navigation dots in the top panel.</description>
     </key>
     <key name="workspace-indicator-position" type="s">
       <default>'right'</default>
@@ -53,8 +53,8 @@
     </key>
     <key name="prefer-macos-style" type="b">
       <default>false</default>
-      <summary>Deprecated live-reload compatibility key</summary>
-      <description>Compatibility placeholder for older AppMenu builds still cached by GNOME Shell during live reload. It is not used by current code.</description>
+      <summary>Unused compatibility key</summary>
+      <description>Retained for dconf compatibility. No longer used by AppMenu.</description>
     </key>
   </schema>
 </schemalist>

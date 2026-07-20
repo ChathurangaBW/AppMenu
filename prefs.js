@@ -87,7 +87,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         // Show workspace indicator
         const showWorkspaceIndicatorRow = new Adw.SwitchRow({
             title: 'Show Workspace Indicator',
-            subtitle: 'Show macOS-style workspace dots in the top panel.',
+            subtitle: 'Show workspace navigation dots in the top panel.',
         });
         settings.bind('show-workspace-indicator', showWorkspaceIndicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showWorkspaceIndicatorRow);

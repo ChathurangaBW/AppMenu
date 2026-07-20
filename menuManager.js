@@ -333,7 +333,7 @@ export class MenuManager {
     }
 
     updateMenuForWindow(window, force = false) {
-        let appName = "Finder";
+        let appName = "Desktop";
         let isAppFocused = false;
         let detectedApp = null;
 

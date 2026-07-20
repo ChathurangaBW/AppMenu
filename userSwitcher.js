@@ -1,5 +1,5 @@
 /*
- * userSwitcher.js - macOS-style Fast User Switching for AppMenu.
+ * userSwitcher.js — Fast User Switching for AppMenu.
  * Displays user avatars in the right side of the panel with session switching.
  */
 

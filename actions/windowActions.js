@@ -79,7 +79,7 @@ export const windowActions = {
         });
     },
 
-    // 'show-all' (Finder app menu) and 'bring-all-front' (Window menu)
+    // 'show-all' (app menu) and 'bring-all-front' (Window menu)
     // are the same operation, implemented via shared helper
     'show-all': _unminimizeAll,
 

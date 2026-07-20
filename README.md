@@ -6,7 +6,7 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v4-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -31,7 +31,7 @@ AppMenu brings a macOS-style menu bar to the GNOME top panel without external da
 - Optional real D-Bus app menu import for supported apps
 - File, Edit, View, Go, Window, and Help menus
 - Workspace navigation and window-to-workspace actions
-- Optional macOS-style workspace dots in the panel
+- Optional workspace navigation dots in the panel
 - Spotlight-style search dialog for apps, recent files, and settings
 - Fast user switching with avatars and session badges
 - Configurable distro icon or Apple logo
@@ -82,7 +82,7 @@ The Window menu includes:
 - Move Window Left
 - Move Window Right
 
-Enable **Show Workspace Indicator** in preferences to show macOS-style workspace dots in the panel.
+Enable **Show Workspace Indicator** in preferences to show workspace navigation dots in the panel.
 
 ## AppMenu vs Other GNOME Menu Extensions
 
@@ -112,7 +112,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v4.zip`
+- `AppMenu-e.g.o-upload-v5.1.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -120,12 +120,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v4.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.1.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v4-linux.run`: one-shot self-extracting installer
-- `AppMenu-v4-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_4_all.deb`: Debian and Ubuntu package
-- `AppMenu-v4.zip`: source snapshot
+- `AppMenu-v5.1-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.1-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.1_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.1.zip`: source snapshot
 
 ### From Source
 
@@ -157,7 +157,7 @@ Available settings:
 | **Lock to focused app** | Keep panel app label tied to the focused app |
 | **Use real application menus** | Use dbusmenu or native GTK action exports when supported, with automatic fallback |
 | **Show User Switcher** | Show avatar-based fast user switching |
-| **Show Workspace Indicator** | Show macOS-style workspace dots |
+| **Show Workspace Indicator** | Show workspace navigation dots |
 | **Debug Logging** | Enable diagnostic GNOME Shell journal logs |
 
 ## Development

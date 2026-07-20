@@ -166,7 +166,7 @@ export const fileActions = {
     'lock-screen': () => launch(['loginctl', 'lock-session']),
     'log-out': () => launch(['gnome-session-quit']),
 
-    // Finder Menu
+    // File browser actions
     'open-settings-ext': () => launch(['gnome-extensions', 'prefs', 'appmenu@ChathurangaBW.github.io']),
     // hide-app, hide-others, show-all — moved to windowActions.js (direct JS eval)
 

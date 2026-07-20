@@ -1,6 +1,6 @@
 export function buildFileMenu() {
     return [
-        { label: "New Finder Window", action: "new-finder-win" },
+        { label: "Open Home", action: "new-finder-win" },
         { label: "New Folder", action: "new-folder" },
         { label: "New Tab", action: "new-tab" },
         { label: "Open", action: "virtual-open" },

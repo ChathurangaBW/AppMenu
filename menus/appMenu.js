@@ -58,8 +58,8 @@ const FALLBACK_MENU = [
 ];
 
 /**
- * Build the fallback app menu when no app is focused (desktop/Finder state).
- * Mirrors macOS Finder's app menu.
+ * Build the fallback app menu when no app is focused (desktop state).
+ * Mirrors the file-manager app menu.
  */
 export function buildFallbackAppMenu() {
     return FALLBACK_MENU;

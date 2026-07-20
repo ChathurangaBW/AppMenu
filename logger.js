@@ -23,6 +23,5 @@ export function warn(message) {
 }
 
 export function error(message) {
-    if (_debugEnabled())
-        console.error(`[appmenu] ${message}`);
+    console.error(`[appmenu] ${message}`);
 }
