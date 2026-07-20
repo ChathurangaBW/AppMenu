@@ -165,7 +165,8 @@ const TopLevelMenuButton = GObject.registerClass(
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
-            try { this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile)); } catch (_e) {}
+            const gicon = Gio.FileIcon.new(iconFile);
+            this._titleWidget.set_gicon(gicon);
         } else {
             this._titleWidget.icon_name = 'start-here-symbolic';
         }
