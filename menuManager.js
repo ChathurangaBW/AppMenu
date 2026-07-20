@@ -106,15 +106,13 @@ const TopLevelMenuButton = GObject.registerClass(
       // Determine if label is an icon name (e.g. distributor-logo-ubuntu)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
-        // start-here-symbolic is the standard GNOME icon that every
-        // distro customizes to its own logo (Yaru→Ubuntu, Adwaita→generic, etc.)
         const icon = new St.Icon({
-            icon_name: 'start-here-symbolic',
             icon_size: 18,
             style_class: 'system-status-icon',
         });
         this.add_child(icon);
         this._titleWidget = icon;
+        this._setIcon(label);
       } else {
         let title = new St.Label({
             text: label,
@@ -156,10 +154,21 @@ const TopLevelMenuButton = GObject.registerClass(
 
     updateLabel(label) {
         if (this._isIcon) {
-            // Icon buttons don't change label
+            this._setIcon(label);
             return;
         }
         this._titleWidget.set_text(label);
+    }
+
+    _setIcon(label) {
+        if (!this._titleWidget || !label) return;
+        const iconFile = Gio.File.new_for_path(
+            GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
+        if (iconFile.query_exists(null)) {
+            try { this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile)); } catch (_e) {}
+        } else {
+            this._titleWidget.icon_name = 'start-here-symbolic';
+        }
     }
 
     _setMenuOpenHandler(handler) {
