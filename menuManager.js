@@ -111,7 +111,7 @@ const TopLevelMenuButton = GObject.registerClass(
         const file = Gio.File.new_for_path(iconPath);
         const gicon = new Gio.FileIcon({ file });
         const textureCache = St.TextureCache.get_default();
-        const icon = textureCache.load_gicon(null, gicon, 18);
+        const icon = textureCache.load_gicon(null, gicon, 18, 1, null);
         this.add_child(icon);
         this._titleWidget = icon;
       } else {
