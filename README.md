@@ -100,6 +100,16 @@ AppMenu is designed to stay lightweight:
 
 ## Installation
 
+### Quick Packages
+
+You can install AppMenu using release artifacts:
+
+- **`appmenu@ChathurangaBW.zip`**: extension package for manual GNOME Shell installation
+- **`AppMenu-v3-linux.run`** or **`AppMenu-v3-linux.bin`**: one-shot self-extracting installer
+- **`appmenu_3_all.deb`**: Debian and Ubuntu package
+
+### From Source
+
 ```bash
 git clone https://github.com/ChathurangaBW/AppMenu.git
 cd AppMenu
