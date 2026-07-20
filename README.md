@@ -100,10 +100,11 @@ Enable **Show Workspace Indicator** in preferences to show macOS-style workspace
 
 AppMenu now uses a **hybrid approach**:
 
-- for apps that export menus over D-Bus, AppMenu can read and trigger the real menu items
-- for apps that do not export menus, AppMenu falls back to stable cross-app actions and shortcuts
+- for apps that export Canonical dbusmenu data, AppMenu can read and trigger the real menu items
+- for modern GTK and libadwaita apps that expose `org.gtk.Actions`, AppMenu can build native action-backed menus without synthetic key presses
+- for apps that expose neither path, AppMenu falls back to stable cross-app actions and shortcuts
 
-This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Wayland, where real exported menus are often partial or absent.
+This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Wayland, where full exported menu trees are often partial or absent.
 
 ## Installation
 
@@ -154,7 +155,7 @@ Available settings:
 | **Show OS icon** | Toggle the logo near the Apple menu |
 | **Icon** | Select a distro icon or Apple logo |
 | **Lock to focused app** | Keep panel app label tied to the focused app |
-| **Use real application menus** | Import real exported D-Bus menus when supported, with automatic fallback |
+| **Use real application menus** | Use dbusmenu or native GTK action exports when supported, with automatic fallback |
 | **Show User Switcher** | Show avatar-based fast user switching |
 | **Show Workspace Indicator** | Show macOS-style workspace dots |
 | **Debug Logging** | Enable diagnostic GNOME Shell journal logs |
