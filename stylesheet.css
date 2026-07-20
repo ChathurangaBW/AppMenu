@@ -15,7 +15,7 @@
 
 /* Distro icon — use panel foreground color for currentColor in SVGs */
 .system-status-icon {
-    icon-size: 16px;
+    icon-size: 22px;
     padding: 0 4px;
 }
 

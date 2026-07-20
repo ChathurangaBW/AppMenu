@@ -107,7 +107,7 @@ const TopLevelMenuButton = GObject.registerClass(
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
         const icon = new St.Icon({
-            icon_size: 18,
+            icon_size: 22,
             style_class: 'system-status-icon',
         });
         this.add_child(icon);
