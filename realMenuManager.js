@@ -326,7 +326,7 @@ function _activateAppBus(busName, objectPath) {
             busName, objectPath,
             'org.freedesktop.Application', 'Activate',
             new GLib.Variant('(a{sv})', [{}]),
-            null, Gio.DBusCallFlags.NONE, 2000, null
+            null, Gio.DBusCallFlags.NONE, 3000, null
         );
         return true;
     } catch (_e) {
@@ -348,7 +348,7 @@ function _probeGtkActions(busName, objectPath, activate = false) {
             return null;
         return Object.entries(descriptions)
             .map(([name, details]) => ({
-                name, enabled: Boolean(details[0]),
+                name, objectPath, enabled: Boolean(details[0]),
                 parameterType: String(details[1] ?? ''), state: details[2],
             }))
             .filter(a => a.parameterType === '');
@@ -373,6 +373,7 @@ export class RealMenuManager {
         this._cachedWinActions = null;
         this._lastWmClass = null;
         this._registrarFailed = false;
+        this._isWayland = (GLib.getenv('XDG_SESSION_TYPE') ?? '').toLowerCase() === 'wayland';
     }
 
     get enabled() {
@@ -420,7 +421,10 @@ export class RealMenuManager {
                     this._setBackend('dbusmenu', registration);
                 return this.buildCurrentMenuModel(appName);
             }
-            this._registrarFailed = true;
+            // Registrar lookups are known to be unavailable/hang-prone on Wayland.
+            // Try at most once there, but keep probing on X11 where dbusmenu can work.
+            if (this._isWayland)
+                this._registrarFailed = true;
         }
 
         // 2) GTK actions — cached per wmClass, no D-Bus rescan on every focus
@@ -743,6 +747,7 @@ export class RealMenuManager {
             return Object.entries(descriptions)
                 .map(([name, details]) => ({
                     name,
+                    objectPath: context.objectPath,
                     enabled: Boolean(details[0]),
                     parameterType: String(details[1] ?? ''),
                     state: details[2],
@@ -770,17 +775,17 @@ export class RealMenuManager {
             label: _labelForAction(action.name),
             sensitive: action.enabled,
             ornament,
-            activate: () => this._activateGtkAction(action.name),
+            activate: () => this._activateGtkAction(action.name, action.objectPath),
         };
     }
 
-    _activateGtkAction(name) {
+    _activateGtkAction(name, objectPath = null) {
         if (!this._currentGtkContext)
             return;
         try {
             Gio.DBus.session.call_sync(
                 this._currentGtkContext.busName,
-                this._currentGtkContext.objectPath,
+                objectPath ?? this._currentGtkContext.objectPath,
                 GTK_ACTIONS_INTERFACE,
                 'Activate',
                 new GLib.Variant('(sav@a{sv})', [name, [], new GLib.Variant('a{sv}', {})]),

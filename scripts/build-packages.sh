@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 UUID="appmenu@ChathurangaBW.github.io"
 NAME="AppMenu"
-VERSION="${APPMENU_VERSION:-4}"
+VERSION="${APPMENU_VERSION:-5.1}"
 DIST_DIR="$ROOT_DIR/dist"
 SCRATCH_DIR="${JCODE_SCRATCH_DIR:-$ROOT_DIR/.scratch}/appmenu-packaging"
 EXT_DIR_NAME="$UUID"

@@ -5,13 +5,31 @@ import * as Logger from '../logger.js';
 const HOME = GLib.get_home_dir();
 const specialDir = (d) => GLib.get_user_special_dir(d) || `${HOME}/${d === GLib.UserDirectory.DIRECTORY_DOCUMENTS ? 'Documents' : d === GLib.UserDirectory.DIRECTORY_DESKTOP ? 'Desktop' : 'Downloads'}`;
 
+function launch(argv) {
+    try {
+        Gio.Subprocess.new(argv, Gio.SubprocessFlags.NONE);
+    } catch (e) {
+        Logger.error(`Failed to launch ${argv[0]}: ${e}`);
+    }
+}
+
+function openPath(path) {
+    launch(['xdg-open', path]);
+}
+
 /**
  * Create a new folder on the Desktop.
  * Note: For in-Nautilus folder creation, use the virtual keyboard shortcut Ctrl+Shift+N.
  */
 function createNewFolder() {
     const timestamp = Date.now();
-    GLib.spawn_command_line_async(`mkdir -p "${HOME}/Desktop/Untitled Folder ${timestamp}"`);
+    try {
+        const desktop = specialDir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+        const folder = Gio.File.new_for_path(GLib.build_filenamev([desktop, `Untitled Folder ${timestamp}`]));
+        folder.make_directory_with_parents(null);
+    } catch (e) {
+        Logger.error(`Failed to create folder: ${e}`);
+    }
 }
 
 /**
@@ -137,28 +155,28 @@ async function ejectDevice(device) {
 
 export const fileActions = {
     // Apple Menu
-    'about-this-mac': () => GLib.spawn_command_line_async('gnome-control-center about'),
-    'system-settings': () => GLib.spawn_command_line_async('gnome-control-center'),
-    'app-store': () => GLib.spawn_command_line_async('gnome-software'),
-    'recent-items': () => GLib.spawn_command_line_async('xdg-open recent:///'),
-    'force-quit': () => GLib.spawn_command_line_async('gnome-system-monitor'),
-    'sleep': () => GLib.spawn_command_line_async('systemctl suspend'),
-    'restart': () => GLib.spawn_command_line_async('gnome-session-quit --reboot'),
-    'shut-down': () => GLib.spawn_command_line_async('gnome-session-quit --power-off'),
-    'lock-screen': () => GLib.spawn_command_line_async('loginctl lock-session'),
-    'log-out': () => GLib.spawn_command_line_async('gnome-session-quit'),
+    'about-this-mac': () => launch(['gnome-control-center', 'about']),
+    'system-settings': () => launch(['gnome-control-center']),
+    'app-store': () => launch(['gnome-software']),
+    'recent-items': () => openPath('recent:///'),
+    'force-quit': () => launch(['gnome-system-monitor']),
+    'sleep': () => launch(['systemctl', 'suspend']),
+    'restart': () => launch(['gnome-session-quit', '--reboot']),
+    'shut-down': () => launch(['gnome-session-quit', '--power-off']),
+    'lock-screen': () => launch(['loginctl', 'lock-session']),
+    'log-out': () => launch(['gnome-session-quit']),
 
     // Finder Menu
-    'open-settings-ext': () => GLib.spawn_command_line_async('gnome-extensions prefs appmenu@ChathurangaBW.github.io'),
+    'open-settings-ext': () => launch(['gnome-extensions', 'prefs', 'appmenu@ChathurangaBW.github.io']),
     // hide-app, hide-others, show-all — moved to windowActions.js (direct JS eval)
 
     // File Menu
-    'open-finder': () => GLib.spawn_command_line_async(`xdg-open ${HOME}`),
-    'new-finder-win': () => GLib.spawn_command_line_async(`xdg-open ${HOME}`),
+    'open-finder': () => openPath(HOME),
+    'new-finder-win': () => openPath(HOME),
     'new-folder': () => createNewFolder(),
 
-    'open-settings': () => GLib.spawn_command_line_async('gnome-control-center'),
-    'empty-bin': () => GLib.spawn_command_line_async('gio trash --empty'),
+    'open-settings': () => launch(['gnome-control-center']),
+    'empty-bin': () => launch(['gio', 'trash', '--empty']),
 
     'eject': async () => {
         // Eject - show list of removable drives and eject them
@@ -177,18 +195,18 @@ export const fileActions = {
     },
 
     // Go Menu
-    'go-home': () => GLib.spawn_command_line_async(`xdg-open ${HOME}`),
-    'go-recents': () => GLib.spawn_command_line_async('xdg-open recent:///'),
-    'go-documents': () => GLib.spawn_command_line_async(`xdg-open "${specialDir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)}"`),
-    'go-desktop': () => GLib.spawn_command_line_async(`xdg-open "${specialDir(GLib.UserDirectory.DIRECTORY_DESKTOP)}"`),
-    'go-downloads': () => GLib.spawn_command_line_async(`xdg-open "${specialDir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)}"`),
-    'go-computer': () => GLib.spawn_command_line_async('xdg-open computer:///'),
-    'go-network': () => GLib.spawn_command_line_async('xdg-open network:///'),
-    'go-applications': () => GLib.spawn_command_line_async('xdg-open /usr/share/applications'),
-    'go-utilities': () => GLib.spawn_command_line_async('xdg-open /usr/bin'),
+    'go-home': () => openPath(HOME),
+    'go-recents': () => openPath('recent:///'),
+    'go-documents': () => openPath(specialDir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)),
+    'go-desktop': () => openPath(specialDir(GLib.UserDirectory.DIRECTORY_DESKTOP)),
+    'go-downloads': () => openPath(specialDir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)),
+    'go-computer': () => openPath('computer:///'),
+    'go-network': () => openPath('network:///'),
+    'go-applications': () => openPath('/usr/share/applications'),
+    'go-utilities': () => openPath('/usr/bin'),
 
     // Help
-    'open-system-help': () => GLib.spawn_command_line_async('yelp'),
+    'open-system-help': () => launch(['yelp']),
 
     // Window — tile-left, tile-right, bring-all-front moved to windowActions.js
 
@@ -201,14 +219,14 @@ export const fileActions = {
     },
 
     'app-details': (ctx, appId) => {
-        if (appId) GLib.spawn_command_line_async(`gnome-software --details=${appId}`);
+        if (appId) launch(['gnome-software', `--details=${appId}`]);
     },
 
     'open-app-preferences': (ctx) => {
         const appInfo = ctx?.app?.get_app_info?.();
         const launchContext = global.create_app_launch_context(0, -1);
         if (!appInfo) {
-            GLib.spawn_command_line_async('gnome-control-center');
+            launch(['gnome-control-center']);
             return;
         }
 
@@ -221,11 +239,11 @@ export const fileActions = {
 
         const appId = ctx?.app?.get_id?.() ?? null;
         if (appId) {
-            GLib.spawn_command_line_async(`gnome-software --details=${appId}`);
+            launch(['gnome-software', `--details=${appId}`]);
             return;
         }
 
-        GLib.spawn_command_line_async('gnome-control-center');
+        launch(['gnome-control-center']);
     },
 
     'about-appmenu': () => {

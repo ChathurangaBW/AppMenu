@@ -139,6 +139,8 @@ const TopLevelMenuButton = GObject.registerClass(
 
         // Give a brief moment for focus to return to Nautilus
         const timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
+            if (this._menuManagerInstance)
+                this._menuManagerInstance._timeoutIds = this._menuManagerInstance._timeoutIds.filter(id => id !== timeoutId);
             const ctx = {
                 window: global.display.get_focus_window(),
                 app: this._appInstance,

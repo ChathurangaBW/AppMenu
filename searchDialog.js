@@ -285,8 +285,12 @@ class SearchDialog extends ModalDialog.ModalDialog {
         } else if (item.type === 'file') {
             Gio.AppInfo.launch_default_for_uri(item.uri, null);
         } else if (item.type === 'settings') {
-            const cmd = item.panel ? `gnome-control-center ${item.panel}` : 'gnome-control-center';
-            GLib.spawn_command_line_async(cmd);
+            try {
+                const argv = item.panel ? ['gnome-control-center', item.panel] : ['gnome-control-center'];
+                Gio.Subprocess.new(argv, Gio.SubprocessFlags.NONE);
+            } catch (_e) {
+                // Ignore missing Settings app or invalid panel names.
+            }
         }
     }
 }
