@@ -8,6 +8,7 @@ import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 const RECENT_ITEMS_FILE = GLib.build_filenamev([GLib.get_user_data_dir(), 'recently-used.xbel']);
 const SEARCH_DEBOUNCE_MS = 200;
 const MAX_RESULTS = 8;
+const MAX_RESULTS_PER_SECTION = 4;
 
 const SETTINGS_PANELS = [
     ['Wi-Fi', 'wifi'],
@@ -55,6 +56,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._timeoutId = 0;
         this._appSystem = Shell.AppSystem.get_default();
         this._recentCache = null;
+        this._resultButtons = [];
+        this._selectedIndex = -1;
 
         this._entry = new St.Entry({
             style_class: 'appmenu-search-entry',
@@ -73,13 +76,22 @@ class SearchDialog extends ModalDialog.ModalDialog {
         const clutterText = this._entry.clutter_text;
         clutterText.connect('text-changed', () => this._scheduleSearch());
         clutterText.connect('key-press-event', (_actor, event) => {
-            if (event.get_key_symbol() === Clutter.KEY_Escape) {
+            const key = event.get_key_symbol();
+            if (key === Clutter.KEY_Escape) {
                 this.close();
                 return Clutter.EVENT_STOP;
             }
-            if (event.get_key_symbol() === Clutter.KEY_Return || event.get_key_symbol() === Clutter.KEY_KP_Enter) {
-                const first = this._resultsBox.get_first_child();
-                first?.activate?.();
+            if (key === Clutter.KEY_Down) {
+                this._moveSelection(1);
+                return Clutter.EVENT_STOP;
+            }
+            if (key === Clutter.KEY_Up) {
+                this._moveSelection(-1);
+                return Clutter.EVENT_STOP;
+            }
+            if (key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter) {
+                const selected = this._resultButtons[this._selectedIndex] ?? this._resultButtons[0];
+                selected?.activate?.();
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -121,7 +133,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
     _defaultResults() {
         return [
             { type: 'settings', title: 'System Settings', subtitle: 'Open GNOME Settings', panel: '' },
-            ...this._apps().slice(0, 5),
+            ...this._apps().slice(0, 4),
+            ...this._recent().slice(0, 3),
         ];
     }
 
@@ -160,7 +173,15 @@ class SearchDialog extends ModalDialog.ModalDialog {
         const results = sources
             .map(item => {
                 const haystack = `${item.title} ${item.subtitle || ''}`.toLowerCase();
-                const score = haystack.startsWith(q) ? 0 : haystack.includes(q) ? 1 : 99;
+                let score = 99;
+                if (haystack.startsWith(q))
+                    score = 0;
+                else if (haystack.includes(q))
+                    score = 2;
+                if (item.type === 'app')
+                    score -= 0.5;
+                else if (item.type === 'settings')
+                    score += 0.25;
                 return { item, score };
             })
             .filter(entry => entry.score < 99)
@@ -171,8 +192,41 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._renderResults(results);
     }
 
+    _groupResults(results) {
+        const groups = [
+            ['Applications', results.filter(item => item.type === 'app').slice(0, MAX_RESULTS_PER_SECTION)],
+            ['Recent Files', results.filter(item => item.type === 'file').slice(0, MAX_RESULTS_PER_SECTION)],
+            ['Settings', results.filter(item => item.type === 'settings').slice(0, MAX_RESULTS_PER_SECTION)],
+        ];
+
+        return groups.filter(([, items]) => items.length > 0);
+    }
+
+    _moveSelection(delta) {
+        if (this._resultButtons.length === 0)
+            return;
+        const nextIndex = this._selectedIndex < 0
+            ? 0
+            : (this._selectedIndex + delta + this._resultButtons.length) % this._resultButtons.length;
+        this._setSelectedIndex(nextIndex);
+    }
+
+    _setSelectedIndex(index) {
+        this._selectedIndex = index;
+        this._resultButtons.forEach((button, idx) => {
+            if (idx === index) {
+                button.add_style_pseudo_class('focus');
+                button.grab_key_focus();
+            } else {
+                button.remove_style_pseudo_class('focus');
+            }
+        });
+    }
+
     _renderResults(results) {
         this._resultsBox.destroy_all_children();
+        this._resultButtons = [];
+        this._selectedIndex = -1;
         if (results.length === 0) {
             this._resultsBox.add_child(new St.Label({
                 text: 'No results',
@@ -181,28 +235,47 @@ class SearchDialog extends ModalDialog.ModalDialog {
             return;
         }
 
-        for (const item of results) {
-            const button = new St.Button({
-                style_class: 'appmenu-search-result',
-                can_focus: true,
-                track_hover: true,
-            });
-            button.activate = () => this._activate(item);
-            button.connect('clicked', () => this._activate(item));
-            const box = new St.BoxLayout({ vertical: true });
-            box.add_child(new St.Label({
-                text: item.title,
-                style_class: 'appmenu-search-result-title',
+        for (const [sectionTitle, sectionItems] of this._groupResults(results)) {
+            this._resultsBox.add_child(new St.Label({
+                text: sectionTitle,
+                style_class: 'appmenu-search-section-title',
                 x_align: Clutter.ActorAlign.START,
             }));
-            box.add_child(new St.Label({
-                text: item.subtitle || item.type,
-                style_class: 'appmenu-search-result-subtitle',
-                x_align: Clutter.ActorAlign.START,
-            }));
-            button.add_child(box);
-            this._resultsBox.add_child(button);
+
+            for (const item of sectionItems) {
+                const button = new St.Button({
+                    style_class: 'appmenu-search-result',
+                    can_focus: true,
+                    track_hover: true,
+                });
+                button.activate = () => this._activate(item);
+                button.connect('clicked', () => this._activate(item));
+                button.connect('notify::hover', () => {
+                    if (button.hover) {
+                        const idx = this._resultButtons.indexOf(button);
+                        if (idx >= 0)
+                            this._setSelectedIndex(idx);
+                    }
+                });
+
+                const box = new St.BoxLayout({ vertical: true });
+                box.add_child(new St.Label({
+                    text: item.title,
+                    style_class: 'appmenu-search-result-title',
+                    x_align: Clutter.ActorAlign.START,
+                }));
+                box.add_child(new St.Label({
+                    text: item.subtitle || item.type,
+                    style_class: 'appmenu-search-result-subtitle',
+                    x_align: Clutter.ActorAlign.START,
+                }));
+                button.add_child(box);
+                this._resultButtons.push(button);
+                this._resultsBox.add_child(button);
+            }
         }
+
+        this._setSelectedIndex(0);
     }
 
     _activate(item) {

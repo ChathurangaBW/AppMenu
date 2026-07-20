@@ -3,20 +3,45 @@
  * Always present regardless of focused app.
  */
 export function buildAppleMenu() {
+    return buildAppleMenuForMode(true);
+}
+
+export function buildAppleMenuForMode(preferMacosStyle = true) {
+    if (!preferMacosStyle) {
+        return [
+            { label: "About This Mac", action: "about-this-mac" },
+            { type: "separator" },
+            { label: "System Settings", action: "system-settings" },
+            { label: "App Store", action: "app-store" },
+            { type: "separator" },
+            { type: "recent-submenu", label: "Recent Items" },
+            { label: "Search...", action: "open-search" },
+            { type: "separator" },
+            { label: "Force Quit...", action: "force-quit" },
+            { type: "separator" },
+            { label: "Sleep", action: "sleep" },
+            { label: "Restart", action: "restart" },
+            { label: "Shut Down", action: "shut-down" },
+            { type: "separator" },
+            { label: "Lock Screen", action: "lock-screen" },
+            { label: "Log Out...", action: "log-out" },
+        ];
+    }
+
     return [
         { label: "About This Mac", action: "about-this-mac" },
         { type: "separator" },
-        { label: "System Settings", action: "system-settings" },
-        { label: "App Store", action: "app-store" },
+        { label: "System Settings…", action: "system-settings" },
+        { label: "App Store…", action: "app-store" },
         { type: "separator" },
         { type: "recent-submenu", label: "Recent Items" },
-        { label: "Search...", action: "open-search" },
+        { label: "Spotlight Search…", action: "open-search" },
         { type: "separator" },
         { label: "Force Quit...", action: "force-quit" },
         { type: "separator" },
         { label: "Sleep", action: "sleep" },
-        { label: "Restart", action: "restart" },
-        { label: "Shut Down", action: "shut-down" },
+        { label: "Restart…", action: "restart" },
+        { label: "Shut Down…", action: "shut-down" },
         { type: "separator" },
         { label: "Lock Screen", action: "lock-screen" },
         { label: "Log Out...", action: "log-out" },

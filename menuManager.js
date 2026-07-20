@@ -9,7 +9,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { dispatch } from './actions/dispatcher.js';
 import { buildAppMenu, buildFallbackAppMenu } from './menus/appMenu.js';
-import { buildAppleMenu } from './menus/appleMenu.js';
+import { buildAppleMenuForMode } from './menus/appleMenu.js';
 import { buildFileMenu } from './menus/fileMenu.js';
 import { buildEditMenu } from './menus/editMenu.js';
 import { buildViewMenu } from './menus/viewMenu.js';
@@ -84,20 +84,16 @@ const EXTENSION_ICONS_DIR = (() => {
     ]);
 })();
 
-// Apple Menu — always present, computed once
-const APPLE_MENU_CHILDREN = buildAppleMenu();
-
 // Static menus — computed once, never change
 const STATIC_MENUS = [
     { label: "File",   children: buildFileMenu() },
     { label: "Edit",   children: buildEditMenu() },
     { label: "View",   children: buildViewMenu() },
     { label: "Go",     children: buildGoMenu() },
-    { label: "Window", children: buildWindowMenu() },
     { label: "Help",   children: buildHelpMenu() },
 ];
 
-const MENU_SLOT_COUNT = 8; // apple + app + 6 static
+const MENU_SLOT_COUNT = 8; // apple + app + 5 static + dynamic window
 
 const TopLevelMenuButton = GObject.registerClass(
   class TopLevelMenuButton extends PanelMenu.Button {
@@ -196,6 +192,16 @@ const TopLevelMenuButton = GObject.registerClass(
           parentMenu.addMenuItem(recentSubmenu);
         } else {
           const menuItem = new PopupMenu.PopupMenuItem(item.label);
+          if (item.sensitive === false)
+            menuItem.setSensitive(false);
+          if (item.ornament) {
+            const ornament = item.ornament === 'dot'
+              ? PopupMenu.Ornament.DOT
+              : item.ornament === 'check'
+                ? PopupMenu.Ornament.CHECK
+                : PopupMenu.Ornament.NONE;
+            menuItem.setOrnament(ornament);
+          }
           if (item.action) {
             menuItem.connect("activate", () => {
               this._executeNativeAction(item.action, true);
@@ -230,6 +236,7 @@ export class MenuManager {
         // Cached settings values (updated via signals, not read per focus change)
         this._cachedMenuIcon = this._settings ? this._settings.get_string('menu-icon') : '';
         this._cachedShowOsIcon = this._settings ? this._settings.get_boolean('show-os-icon') : true;
+        this._cachedPreferMacosStyle = this._settings ? this._settings.get_boolean('prefer-macos-style') : true;
 
         // Cached singletons (avoid repeated get_default() calls)
         this._windowTracker = Shell.WindowTracker.get_default();
@@ -251,6 +258,10 @@ export class MenuManager {
                     // Invalidate app cache so slot 0 updates on next focus change
                     this._lastAppId = null;
                 }),
+                this._settings.connect('changed::prefer-macos-style', () => {
+                    this._cachedPreferMacosStyle = this._settings.get_boolean('prefer-macos-style');
+                    this._lastAppId = null;
+                }),
             ];
         } else {
             this._settingsSignalIds = [];
@@ -265,6 +276,10 @@ export class MenuManager {
 
     get _showOsIcon() {
         return this._cachedShowOsIcon;
+    }
+
+    get _preferMacosStyle() {
+        return this._cachedPreferMacosStyle;
     }
 
     _updateOsIconVisibility() {
@@ -366,17 +381,25 @@ export class MenuManager {
         }
 
         const appChildren = isAppFocused
-            ? buildAppMenu(appName, detectedApp)
+            ? buildAppMenu(appName, detectedApp, window, this._preferMacosStyle)
             : buildFallbackAppMenu();
+
+        const windowChildren = buildWindowMenu(window, detectedApp, this._preferMacosStyle);
+        const appleChildren = buildAppleMenuForMode(this._preferMacosStyle);
 
         // Cache app menu data
         this._lastAppId = currentAppId;
         this._lastAppMenuData = appChildren;
 
         const newMenuData = [
-            { label: this._menuIcon, children: APPLE_MENU_CHILDREN },
+            { label: this._menuIcon, children: appleChildren },
             { label: appName, children: appChildren },
-            ...STATIC_MENUS,
+            STATIC_MENUS[0],
+            STATIC_MENUS[1],
+            STATIC_MENUS[2],
+            STATIC_MENUS[3],
+            { label: "Window", children: windowChildren },
+            STATIC_MENUS[4],
         ];
 
         // Ensure we have exactly MENU_SLOT_COUNT buttons
@@ -389,15 +412,15 @@ export class MenuManager {
         }
 
         // Update existing buttons in-place
-        // Only index 1 (app menu) changes per focus; indices 0,2-7 are static
+        // Indices 1 and 6 are dynamic. Others are effectively static.
         for (let i = 0; i < MENU_SLOT_COUNT; i++) {
             const btn = this._buttons[i];
             const data = newMenuData[i];
 
             btn._appInstance = detectedApp;
             btn.updateLabel(data.label);
-            // Skip rebuild for static menus (Apple=0, File=2, Edit=3, View=4, Go=5, Window=6, Help=7)
-            if (i !== 1) continue;
+            // Skip rebuild for static menus (File=2, Edit=3, View=4, Go=5, Help=7)
+            if (i !== 0 && i !== 1 && i !== 6) continue;
             btn.rebuildMenu(data.children);
         }
 

@@ -204,6 +204,30 @@ export const fileActions = {
         if (appId) GLib.spawn_command_line_async(`gnome-software --details=${appId}`);
     },
 
+    'open-app-preferences': (ctx) => {
+        const appInfo = ctx?.app?.get_app_info?.();
+        const launchContext = global.create_app_launch_context(0, -1);
+        if (!appInfo) {
+            GLib.spawn_command_line_async('gnome-control-center');
+            return;
+        }
+
+        const actions = appInfo.list_actions?.() ?? [];
+        const preferredAction = actions.find(action => ['preferences', 'settings', 'configure', 'options'].includes(action));
+        if (preferredAction) {
+            appInfo.launch_action(preferredAction, launchContext);
+            return;
+        }
+
+        const appId = ctx?.app?.get_id?.() ?? null;
+        if (appId) {
+            GLib.spawn_command_line_async(`gnome-software --details=${appId}`);
+            return;
+        }
+
+        GLib.spawn_command_line_async('gnome-control-center');
+    },
+
     'about-appmenu': () => {
         Gio.AppInfo.launch_default_for_uri(
             'https://github.com/ChathurangaBW/AppMenu',

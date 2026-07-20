@@ -26,6 +26,11 @@
       <summary>Show User Switcher</summary>
       <description>Show the user switcher button in the top panel for fast user switching.</description>
     </key>
+    <key name="prefer-macos-style" type="b">
+      <default>true</default>
+      <summary>Prefer macOS-Style Labels</summary>
+      <description>Use more macOS-like wording and layout in the Apple, app, and Window menus while preserving GNOME-native behavior.</description>
+    </key>
     <key name="debug-logging" type="b">
       <default>false</default>
       <summary>Debug Logging</summary>
