@@ -270,6 +270,93 @@ function _busNameToObjectPath(busName) {
     return `/${busName.replace(/\./g, '/')}`;
 }
 
+// Scan the session bus for a well-known name matching a wmClass pattern.
+// wmClass is usually like "gnome-terminal-server" or "gedit" — we try
+// to match it against well-known names like "org.gnome.Ptyxis" etc.
+function _findBusNameFromWmClass(wmClass) {
+    if (!wmClass)
+        return null;
+
+    const lower = wmClass.toLowerCase();
+
+    try {
+        const result = Gio.DBus.session.call_sync(
+            'org.freedesktop.DBus', '/org/freedesktop/DBus',
+            'org.freedesktop.DBus', 'ListNames',
+            null, null, Gio.DBusCallFlags.NONE, -1, null
+        );
+        const names = result.deepUnpack()[0];
+
+        // Try exact match first: eg "org.gnome.gedit" for wmClass "gedit"
+        for (const name of names) {
+            if (name.startsWith(':') || name.startsWith('org.freedesktop') ||
+                name.startsWith('org.gtk.vfs') || name.startsWith('org.a11y') ||
+                name.startsWith('org.gnome.Mutter') || name.startsWith('org.gnome.Settings') ||
+                name.startsWith('org.gnome.Shell') || name.startsWith('org.gnome.Session') ||
+                name.startsWith('org.pulseaudio') || name.startsWith('ca.desrt'))
+                continue;
+            const nameLower = name.toLowerCase();
+            // Match if the last component of the bus name equals wmClass
+            const lastDot = nameLower.lastIndexOf('.');
+            const lastPart = lastDot >= 0 ? nameLower.substring(lastDot + 1) : nameLower;
+            if (lastPart === lower || lastPart.replace(/-/g, '') === lower.replace(/-/g, ''))
+                return name;
+        }
+
+        // Fuzzy match: wmClass appears as a substring in the bus name
+        for (const name of names) {
+            if (name.startsWith(':') || name.startsWith('org.freedesktop')) continue;
+            if (name.toLowerCase().includes(lower))
+                return name;
+        }
+
+    } catch (_e) {
+        // ignore
+    }
+
+    return null;
+}
+
+// Try to bring an app's D-Bus service online via org.freedesktop.Application.Activate
+// so we can then query org.gtk.Actions. This works for GTK apps that use
+// GApplication's D-Bus activation but don't keep their bus name active.
+function _activateAppBus(busName, objectPath) {
+    try {
+        Gio.DBus.session.call_sync(
+            busName, objectPath,
+            'org.freedesktop.Application', 'Activate',
+            new GLib.Variant('(a{sv})', [{}]),
+            null, Gio.DBusCallFlags.NONE, 2000, null
+        );
+        return true;
+    } catch (_e) {
+        return false;
+    }
+}
+
+// Probe an object path for org.gtk.Actions, with optional D-Bus activation.
+// Returns array of action objects or null.
+function _probeGtkActions(busName, objectPath, activate = false) {
+    try {
+        const result = Gio.DBus.session.call_sync(
+            busName, objectPath,
+            GTK_ACTIONS_INTERFACE, 'DescribeAll',
+            null, null, Gio.DBusCallFlags.NONE, activate ? 5000 : -1, null
+        );
+        const [descriptions] = result.deepUnpack();
+        if (!descriptions || Object.keys(descriptions).length === 0)
+            return null;
+        return Object.entries(descriptions)
+            .map(([name, details]) => ({
+                name, enabled: Boolean(details[0]),
+                parameterType: String(details[1] ?? ''), state: details[2],
+            }))
+            .filter(a => a.parameterType === '');
+    } catch (_e) {
+        return null;
+    }
+}
+
 // ── RealMenuManager ──────────────────────────────────────────────────────
 export class RealMenuManager {
     constructor(settings, onChanged) {
@@ -283,6 +370,7 @@ export class RealMenuManager {
         this._backendType = null;
         this._currentGtkContext = null;
         this._cachedActions = null;
+        this._cachedWinActions = null;
     }
 
     get enabled() {
@@ -295,11 +383,13 @@ export class RealMenuManager {
 
     invalidate() {
         this._cachedActions = null;
+        this._cachedWinActions = null;
         this._setBackend(null, null);
     }
 
     destroy() {
         this._cachedActions = null;
+        this._cachedWinActions = null;
         this._setBackend(null, null);
         this._settings = null;
         this._onChanged = null;
@@ -324,10 +414,31 @@ export class RealMenuManager {
             return this.buildCurrentMenuModel(appName);
         }
 
-        // 2) Fallback to GTK actions — try detectedApp first, then wmClass
+        // 2) Try detectedApp first, then wmClass, then dynamic bus name scan
         let gtkContext = this._lookupGtkAppContext(detectedApp);
         if (!gtkContext && wmClass) {
+            // Try as desktop ID
             gtkContext = this._lookupGtkAppContext({ get_id: () => wmClass });
+            // Try dynamic D-Bus name discovery
+            if (!gtkContext) {
+                const busName = _findBusNameFromWmClass(wmClass);
+                if (busName) {
+                    const objectPath = _busNameToObjectPath(busName);
+                    gtkContext = { busName, objectPath, appId: wmClass };
+                }
+            }
+            // Try D-Bus activation: activate the service then query
+            if (!gtkContext) {
+                const candidateBus = _desktopIdToBusName(wmClass);
+                if (candidateBus) {
+                    const candidatePath = _busNameToObjectPath(candidateBus);
+                    _activateAppBus(candidateBus, candidatePath);
+                    const actions = _probeGtkActions(candidateBus, candidatePath);
+                    if (actions && actions.length > 0) {
+                        gtkContext = { busName: candidateBus, objectPath: candidatePath, appId: wmClass };
+                    }
+                }
+            }
         }
         if (!gtkContext) {
             this._cachedActions = null;
@@ -335,11 +446,20 @@ export class RealMenuManager {
             return null;
         }
 
+        // 3) Probe for per-window actions (e.g. tab.read-only in Ptyxis)
+        let winActions = null;
+        if (gtkContext.busName) {
+            const winObjPath = `${gtkContext.objectPath}/window/1`;
+            winActions = _probeGtkActions(gtkContext.busName, winObjPath);
+        }
+
         const key = `gtk:${gtkContext.busName}|${gtkContext.objectPath}`;
         if (key !== this._currentKey) {
             this._cachedActions = null;
             this._setBackend('gtk-actions', gtkContext);
         }
+
+        this._cachedWinActions = winActions;
 
         return this.buildCurrentMenuModel(appName);
     }
@@ -432,12 +552,18 @@ export class RealMenuManager {
         const helpItems = build(buckets.help);
         const otherItems = build(buckets.other);
 
-        // Assemble app menu children: app-category items + any unrecognised
+        // Assemble app menu children: app-category items + any unrecognised + per-window actions
         const appChildren = [...appItems];
         if (otherItems.length > 0) {
             if (appChildren.length > 0)
                 appChildren.push({ type: 'separator' });
             appChildren.push(...otherItems);
+        }
+        // Add per-window actions (e.g. "Read Only" tab toggle in Ptyxis)
+        if (this._cachedWinActions && this._cachedWinActions.length > 0) {
+            if (appChildren.length > 0)
+                appChildren.push({ type: 'separator' });
+            appChildren.push(...this._buildGtkActionItems(this._cachedWinActions));
         }
 
         // Assemble top-level menus
