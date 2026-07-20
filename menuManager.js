@@ -162,17 +162,11 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _setIcon(label) {
         if (!this._titleWidget || !label) return;
-        // apple-logo is not in any icon theme — load custom SVG
-        if (label === 'apple-logo') {
-            const iconFile = Gio.File.new_for_path(
-                GLib.build_filenamev([EXTENSION_ICONS_DIR, 'apple-logo.svg']));
-            if (iconFile.query_exists(null)) {
-                this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile));
-                return;
-            }
+        const iconFile = Gio.File.new_for_path(
+            GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
+        if (iconFile.query_exists(null)) {
+            this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile));
         }
-        // All other icons: use system icon theme via St.Icon (picks up WhiteSur/Yaru/etc)
-        this._titleWidget.icon_name = label;
     }
 
     _setMenuOpenHandler(handler) {
