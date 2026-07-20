@@ -51,5 +51,10 @@
       <summary>Use Real Application Menus</summary>
       <description>When available, import real exported application menus over D-Bus. Apps without exported menus still use AppMenu's synthetic fallback menus.</description>
     </key>
+    <key name="prefer-macos-style" type="b">
+      <default>false</default>
+      <summary>Deprecated live-reload compatibility key</summary>
+      <description>Compatibility placeholder for older AppMenu builds still cached by GNOME Shell during live reload. It is not used by current code.</description>
+    </key>
   </schema>
 </schemalist>

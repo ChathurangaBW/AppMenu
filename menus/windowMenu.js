@@ -1,6 +1,11 @@
 export function buildWindowMenu(window = null, app = null) {
     const hasWindow = Boolean(window);
-    const canMinimize = hasWindow && !window.is_minimized();
+    const isMinimized = hasWindow
+        ? (typeof window.is_minimized === 'function'
+            ? window.is_minimized()
+            : Boolean(window.minimized))
+        : false;
+    const canMinimize = hasWindow && !isMinimized;
     const canTile = hasWindow;
     const workspaceManager = global.workspace_manager;
     const activeWorkspaceIndex = workspaceManager?.get_active_workspace_index?.() ?? 0;
