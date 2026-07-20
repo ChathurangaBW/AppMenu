@@ -105,12 +105,8 @@ const TopLevelMenuButton = GObject.registerClass(
       // Determine if label is an icon name (e.g. distributor-logo-*)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
-        const iconsDir = EXTENSION_ICONS_DIR;
-        const iconPath = GLib.build_filenamev([iconsDir, `${label}.svg`]);
-        const file = Gio.File.new_for_path(iconPath);
-        const gicon = new Gio.FileIcon({ file });
         const icon = new St.Icon({
-            gicon,
+            icon_name: 'start-here-symbolic',
             icon_size: 18,
             style_class: 'system-status-icon',
         });
