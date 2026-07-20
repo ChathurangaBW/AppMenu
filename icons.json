@@ -1,0 +1,87 @@
+[
+  {
+    "idx": 0,
+    "title": "Apple",
+    "path": "apple-logo.svg"
+  },
+  {
+    "idx": 1,
+    "title": "Debian",
+    "path": "distributor-logo-debian.svg"
+  },
+  {
+    "idx": 2,
+    "title": "Ubuntu",
+    "path": "distributor-logo-ubuntu.svg"
+  },
+  {
+    "idx": 3,
+    "title": "Fedora",
+    "path": "distributor-logo-fedora.svg"
+  },
+  {
+    "idx": 4,
+    "title": "Arch Linux",
+    "path": "distributor-logo-archlinux.svg"
+  },
+  {
+    "idx": 5,
+    "title": "Manjaro",
+    "path": "distributor-logo-manjaro.svg"
+  },
+  {
+    "idx": 6,
+    "title": "openSUSE",
+    "path": "distributor-logo-opensuse.svg"
+  },
+  {
+    "idx": 7,
+    "title": "Linux Mint",
+    "path": "distributor-logo-linux-mint.svg"
+  },
+  {
+    "idx": 8,
+    "title": "Pop!_OS",
+    "path": "distributor-logo-pop-os.svg"
+  },
+  {
+    "idx": 9,
+    "title": "Elementary OS",
+    "path": "distributor-logo-elementary.svg"
+  },
+  {
+    "idx": 10,
+    "title": "NixOS",
+    "path": "distributor-logo-nixos.svg"
+  },
+  {
+    "idx": 11,
+    "title": "Alpine",
+    "path": "distributor-logo-alpine.svg"
+  },
+  {
+    "idx": 12,
+    "title": "Gentoo",
+    "path": "distributor-logo-gentoo.svg"
+  },
+  {
+    "idx": 13,
+    "title": "Kali Linux",
+    "path": "distributor-logo-kali-linux.svg"
+  },
+  {
+    "idx": 14,
+    "title": "Zorin OS",
+    "path": "distributor-logo-zorin.svg"
+  },
+  {
+    "idx": 15,
+    "title": "Void Linux",
+    "path": "distributor-logo-void.svg"
+  },
+  {
+    "idx": 16,
+    "title": "EndeavourOS",
+    "path": "distributor-logo-endeavouros.svg"
+  }
+]

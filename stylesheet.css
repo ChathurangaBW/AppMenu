@@ -1,0 +1,118 @@
+/* AppMenu panel button label */
+.panel-button-label {
+    font-weight: bold;
+    font-size: 10pt;
+    padding: 0 6px;
+}
+
+/* Distro icon — use panel foreground color for currentColor in SVGs */
+.system-status-icon {
+    icon-size: 16px;
+    padding: 0 4px;
+}
+
+/* Section headers in popup menus (e.g. "Open Windows") */
+.popup-subtitle-menu-item {
+    font-weight: bold;
+    font-size: 9pt;
+    color: -st-dim-text;
+}
+
+/* Recent items submenu */
+.appmenu-recent-menu {
+    min-width: 280px;
+}
+
+/* Document tooltip for recent file paths */
+.appmenu-document-tooltip {
+    font-size: 9pt;
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 400px;
+}
+
+/*###############################################*/
+/*          User Switcher Styles                 */
+/*###############################################*/
+.appmenu-user-switcher-button {
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.appmenu-user-switcher-button + .panel-button-label {
+    margin-left: 2px;
+}
+
+.appmenu-user-switcher-menu {
+    min-width: 300px;
+    padding: 6px 0;
+}
+
+.appmenu-user-grid {
+    min-width: 100%;
+    margin: 0 auto;
+}
+
+.appmenu-user-item {
+    border-radius: 12px;
+    padding: 12px;
+    margin: 0 12px 0 12px;
+}
+
+.appmenu-user-item:hover {
+    background-color: rgba(128, 128, 128, 0.15);
+}
+
+.appmenu-user-item-content {
+    align-items: center;
+}
+
+.appmenu-user-card-avatar-frame {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.appmenu-user-card-avatar-frame.current-user {
+    border-color: -st-accent-color;
+}
+
+.appmenu-user-card-avatar-frame.logged-in {
+    border-color: rgba(128, 128, 128, 0.4);
+}
+
+.appmenu-user-card-avatar {
+    border-radius: 999px;
+    background-size: cover;
+    background-position: center;
+}
+
+.appmenu-user-card-name {
+    font-weight: bold;
+    text-align: center;
+    margin-top: 8px;
+}
+
+.appmenu-user-avatar-container {
+    width: 68px;
+    height: 68px;
+}
+
+.appmenu-user-session-badge {
+    background-color: -st-accent-color;
+    border-radius: 99px;
+    padding: 3px;
+    font-weight: bold;
+    color: -st-accent-fg-color;
+    border: 1px solid;
+    border-color: lightgray;
+}
+
+.appmenu-user-session-badge.current-user {
+    background-color: darkgoldenrod;
+    color: -st-accent-fg-color;
+    border: 1px solid;
+    border-color: lightgray;
+}

@@ -1,0 +1,9 @@
+# GSettings compiled schema
+schemas/gschemas.compiled
+
+# Editor / OS
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
