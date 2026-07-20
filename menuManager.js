@@ -105,14 +105,13 @@ const TopLevelMenuButton = GObject.registerClass(
       // Determine if label is an icon name (e.g. distributor-logo-*)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
-        // Load the SVG file and use a ClutterTexture for reliable rendering
+        // Use St.TextureCache for reliable SVG rendering in GNOME Shell
         const iconsDir = EXTENSION_ICONS_DIR;
         const iconPath = GLib.build_filenamev([iconsDir, `${label}.svg`]);
-        const icon = new St.Icon({
-            gicon: new Gio.FileIcon({ file: Gio.File.new_for_path(iconPath) }),
-            icon_size: 18,
-            style_class: 'system-status-icon',
-        });
+        const file = Gio.File.new_for_path(iconPath);
+        const gicon = new Gio.FileIcon({ file });
+        const textureCache = St.TextureCache.get_default();
+        const icon = textureCache.load_gicon(null, gicon, 18);
         this.add_child(icon);
         this._titleWidget = icon;
       } else {
