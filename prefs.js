@@ -108,3 +108,20 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         group.add(debugLoggingRow);
     }
 }
+        // Icon size
+        const iconSizeAdjustment = new Gtk.Adjustment({
+            lower: 12, upper: 36, step_increment: 2, page_increment: 4,
+            value: settings.get_int('icon-size') || 22,
+        });
+        const iconSizeRow = new Adw.SpinRow({
+            title: 'Icon Size',
+            subtitle: 'Panel icon size in pixels.',
+            adjustment: iconSizeAdjustment,
+        });
+        iconSizeRow.connect('changed', () => {
+            settings.set_int('icon-size', iconSizeAdjustment.get_value());
+        });
+        settings.connect('changed::icon-size', () => {
+            iconSizeAdjustment.set_value(settings.get_int('icon-size') || 22);
+        });
+        group.add(iconSizeRow);

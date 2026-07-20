@@ -106,8 +106,9 @@ const TopLevelMenuButton = GObject.registerClass(
       // Determine if label is an icon name (e.g. distributor-logo-ubuntu)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
+        this._iconSize = this._menuManagerInstance?._cachedIconSize ?? 22;
         const icon = new St.Icon({
-            icon_size: 22,
+            icon_size: this._iconSize,
             style_class: 'system-status-icon',
         });
         this.add_child(icon);
@@ -162,6 +163,7 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _setIcon(label) {
         if (!this._titleWidget || !label) return;
+        this._titleWidget.icon_size = this._menuManagerInstance?._cachedIconSize ?? 22;
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
@@ -262,6 +264,7 @@ export class MenuManager {
         // Cached settings values (updated via signals, not read per focus change)
         this._cachedMenuIcon = this._settings ? this._settings.get_string('menu-icon') : '';
         this._cachedShowOsIcon = this._settings ? this._settings.get_boolean('show-os-icon') : true;
+        this._cachedIconSize = this._settings ? Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22)) : 22;
 
         // Cached singletons (avoid repeated get_default() calls)
         this._windowTracker = Shell.WindowTracker.get_default();
@@ -291,6 +294,15 @@ export class MenuManager {
                     this._lastRealMenuKey = null;
                     this._realMenuManager.invalidate();
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
+                }),
+                this._settings.connect('changed::icon-size', () => {
+                    this._cachedIconSize = Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22));
+                    if (this._buttons.length > 0) {
+                        const btn0 = this._buttons[0];
+                        if (btn0._isIcon && btn0._titleWidget) {
+                            btn0._titleWidget.icon_size = this._cachedIconSize;
+                        }
+                    }
                 }),
             ];
         } else {

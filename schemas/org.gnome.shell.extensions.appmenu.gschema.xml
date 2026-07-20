@@ -56,5 +56,11 @@
       <summary>Unused compatibility key</summary>
       <description>Retained for dconf compatibility. No longer used by AppMenu.</description>
     </key>
+    <key name="icon-size" type="i">
+      <default>22</default>
+      <range min="12" max="36"/>
+      <summary>Icon Size</summary>
+      <description>Panel icon size in pixels (12–36).</description>
+    </key>
   </schema>
 </schemalist>
