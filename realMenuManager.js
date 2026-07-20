@@ -474,7 +474,8 @@ export class RealMenuManager {
         if (!windowId)
             return null;
 
-        const result = Gio.DBus.session.call_sync(
+        try {
+            const result = Gio.DBus.session.call_sync(
                 REGISTRAR_BUS_NAME,
                 REGISTRAR_OBJECT_PATH,
                 REGISTRAR_INTERFACE,
@@ -492,7 +493,6 @@ export class RealMenuManager {
 
             return { service, path };
         } catch (e) {
-            Logger.debug(`No exported menu for window ${windowId}: ${e}`);
             return null;
         }
     }
