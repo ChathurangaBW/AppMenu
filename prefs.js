@@ -92,6 +92,13 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         settings.bind('show-workspace-indicator', showWorkspaceIndicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showWorkspaceIndicatorRow);
 
+        const realMenusRow = new Adw.SwitchRow({
+            title: 'Use real application menus',
+            subtitle: 'Read exported D-Bus menus when apps provide them, and fall back automatically otherwise.',
+        });
+        settings.bind('use-real-menus', realMenusRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(realMenusRow);
+
         // Debug logging
         const debugLoggingRow = new Adw.SwitchRow({
             title: 'Debug Logging',

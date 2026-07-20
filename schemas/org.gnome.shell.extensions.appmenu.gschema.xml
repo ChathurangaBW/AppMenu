@@ -46,5 +46,10 @@
       <summary>Search Shortcut</summary>
       <description>Keyboard shortcut used to open AppMenu Search.</description>
     </key>
+    <key name="use-real-menus" type="b">
+      <default>true</default>
+      <summary>Use Real Application Menus</summary>
+      <description>When available, import real exported application menus over D-Bus. Apps without exported menus still use AppMenu's synthetic fallback menus.</description>
+    </key>
   </schema>
 </schemalist>

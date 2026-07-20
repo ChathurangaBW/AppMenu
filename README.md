@@ -14,20 +14,21 @@
   <img src="screenshot.png" alt="AppMenu screenshot" width="900" />
 </p>
 
-AppMenu brings a macOS-style menu bar to the GNOME top panel without external daemons, GTK module hacks, or background services. It provides app-aware menus, keyboard shortcuts, recent items, workspace controls, Spotlight-style search, and fast user switching in one lightweight GNOME Shell extension.
+AppMenu brings a macOS-style menu bar to the GNOME top panel without external daemons or background services. It provides app-aware menus, optional real exported app menus when available, keyboard shortcuts, recent items, workspace controls, search, and fast user switching in one lightweight GNOME Shell extension.
 
 ## Why AppMenu
 
 - **No external daemon**: pure GJS extension, no Python service or appmenu daemon
-- **No GTK module setup**: no `~/.gtkrc-2.0`, no GTK module injection, no startup helper
+- **No manual GTK module setup**: no `~/.gtkrc-2.0`, no hand-written startup helper, no extra daemon to babysit
 - **Works across app toolkits**: GTK, Qt, Electron, Flatpak, browsers, terminals, and Java apps all get the same menu actions
 - **Wayland-friendly**: uses GNOME Shell APIs and virtual keyboard events instead of X11-only menu scraping
-- **Focused on reliability**: stable app-independent actions instead of fragile real-menu extraction
+- **Hybrid behavior**: reads real exported menus when apps provide them, and falls back automatically when they do not
 
 ## Highlights
 
 - Apple menu with system actions, recent items, and Search
 - Dynamic app menu based on the focused window
+- Optional real D-Bus app menu import for supported apps
 - File, Edit, View, Go, Window, and Help menus
 - Workspace navigation and window-to-workspace actions
 - Optional macOS-style workspace dots in the panel
@@ -97,7 +98,12 @@ Enable **Show Workspace Indicator** in preferences to show macOS-style workspace
 | Spotlight-style search | Yes | HUD only | No | No |
 | One-shot installers | Yes | Yes | No | No |
 
-AppMenu does **not** try to extract real app menus. That approach is fragile on GTK4, Qt, Electron, Java, Flatpak, and Wayland. Instead, AppMenu provides stable macOS-style actions that work across apps through GNOME Shell APIs and keyboard shortcuts.
+AppMenu now uses a **hybrid approach**:
+
+- for apps that export menus over D-Bus, AppMenu can read and trigger the real menu items
+- for apps that do not export menus, AppMenu falls back to stable cross-app actions and shortcuts
+
+This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Wayland, where real exported menus are often partial or absent.
 
 ## Installation
 
@@ -148,6 +154,7 @@ Available settings:
 | **Show OS icon** | Toggle the logo near the Apple menu |
 | **Icon** | Select a distro icon or Apple logo |
 | **Lock to focused app** | Keep panel app label tied to the focused app |
+| **Use real application menus** | Import real exported D-Bus menus when supported, with automatic fallback |
 | **Show User Switcher** | Show avatar-based fast user switching |
 | **Show Workspace Indicator** | Show macOS-style workspace dots |
 | **Debug Logging** | Enable diagnostic GNOME Shell journal logs |

@@ -17,6 +17,7 @@ import { buildGoMenu } from './menus/goMenu.js';
 import { buildWindowMenu } from './menus/windowMenu.js';
 import { buildHelpMenu } from './menus/helpMenu.js';
 import { RecentItemsSubmenu } from './recentItemsSubmenu.js';
+import { RealMenuManager } from './realMenuManager.js';
 import * as Logger from './logger.js';
 
 // Distro icon map — local symbolic SVG icons for panel-friendly display
@@ -93,8 +94,6 @@ const STATIC_MENUS = [
     { label: "Help",   children: buildHelpMenu() },
 ];
 
-const MENU_SLOT_COUNT = 8; // apple + app + 5 static + dynamic window
-
 const TopLevelMenuButton = GObject.registerClass(
   class TopLevelMenuButton extends PanelMenu.Button {
     _init(label, children, appInstance = null, menuManagerInstance = null) {
@@ -135,7 +134,10 @@ const TopLevelMenuButton = GObject.registerClass(
         this.add_child(title);
         this._titleWidget = title;
       }
+      this._menuOpenSignalId = 0;
+      this._menuOpenHandler = null;
 
+      this._setMenuOpenHandler(null);
       this._buildSubMenu(children, this.menu);
     }
 
@@ -168,8 +170,20 @@ const TopLevelMenuButton = GObject.registerClass(
         this._titleWidget.set_text(label);
     }
 
-    rebuildMenu(children) {
+    _setMenuOpenHandler(handler) {
+        this._menuOpenHandler = handler;
+        if (this._menuOpenSignalId)
+            this.menu.disconnect(this._menuOpenSignalId);
+
+        this._menuOpenSignalId = this.menu.connect('open-state-changed', (_menu, isOpen) => {
+            if (isOpen)
+                this._menuOpenHandler?.();
+        });
+    }
+
+    rebuildMenu(children, openHandler = null) {
         this.menu.removeAll();
+        this._setMenuOpenHandler(openHandler);
         this._buildSubMenu(children, this.menu);
     }
 
@@ -184,6 +198,12 @@ const TopLevelMenuButton = GObject.registerClass(
           parentMenu.addMenuItem(headerItem);
         } else if (item.type === "submenu") {
           const subMenu = new PopupMenu.PopupSubMenuMenuItem(item.label);
+          if (typeof item.onOpen === 'function') {
+              subMenu.menu.connect('open-state-changed', (_menu, isOpen) => {
+                  if (isOpen)
+                      item.onOpen();
+              });
+          }
           this._buildSubMenu(item.children, subMenu.menu);
           parentMenu.addMenuItem(subMenu);
         } else if (item.type === "recent-submenu") {
@@ -202,7 +222,11 @@ const TopLevelMenuButton = GObject.registerClass(
                 : PopupMenu.Ornament.NONE;
             menuItem.setOrnament(ornament);
           }
-          if (item.action) {
+          if (typeof item.activate === 'function') {
+            menuItem.connect("activate", () => {
+              item.activate();
+            });
+          } else if (item.action) {
             menuItem.connect("activate", () => {
               this._executeNativeAction(item.action, true);
             });
@@ -232,6 +256,9 @@ export class MenuManager {
 
         // Auto-detected distro icon (computed once, used as fallback)
         this._distroIcon = detectDistroIcon();
+        this._realMenuManager = new RealMenuManager(this._settings, () => {
+            this.updateMenuForWindow(global.display.get_focus_window(), true);
+        });
 
         // Cached settings values (updated via signals, not read per focus change)
         this._cachedMenuIcon = this._settings ? this._settings.get_string('menu-icon') : '';
@@ -244,6 +271,8 @@ export class MenuManager {
         // App menu cache — avoid rebuild when same app stays focused
         this._lastAppId = null;
         this._lastAppMenuData = null;
+        this._lastWindowId = null;
+        this._lastRealMenuKey = null;
 
         // Listen for settings changes
         if (this._settings) {
@@ -256,6 +285,13 @@ export class MenuManager {
                     this._cachedMenuIcon = this._settings.get_string('menu-icon');
                     // Invalidate app cache so slot 0 updates on next focus change
                     this._lastAppId = null;
+                }),
+                this._settings.connect('changed::use-real-menus', () => {
+                    this._lastAppId = null;
+                    this._lastWindowId = null;
+                    this._lastRealMenuKey = null;
+                    this._realMenuManager.invalidate();
+                    this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
             ];
         } else {
@@ -304,7 +340,7 @@ export class MenuManager {
         return this._virtualDevice;
     }
 
-    updateMenuForWindow(window) {
+    updateMenuForWindow(window, force = false) {
         let appName = "Finder";
         let isAppFocused = false;
         let detectedApp = null;
@@ -362,39 +398,56 @@ export class MenuManager {
         }
 
         const currentAppId = detectedApp ? detectedApp.get_id() : null;
+        const currentWindowId = window?.get_id?.() ?? null;
+        const realMenuData = this._realMenuManager.updateForWindow(window, appName);
+        const realMenuKey = realMenuData?.registrationKey ?? null;
 
-        // Skip rebuild if same app is still focused (only update OS icon visibility)
-        if (currentAppId === this._lastAppId && this._lastAppMenuData) {
+        // Skip rebuild if the effective menu state is unchanged
+        if (!force
+            && currentAppId === this._lastAppId
+            && currentWindowId === this._lastWindowId
+            && realMenuKey === this._lastRealMenuKey
+            && this._lastAppMenuData) {
             if (this._buttons.length > 0) {
                 this._buttons[0].visible = this._showOsIcon;
             }
             return;
         }
 
-        const appChildren = isAppFocused
+        const fallbackAppChildren = isAppFocused
             ? buildAppMenu(appName, detectedApp, window)
             : buildFallbackAppMenu();
+        const appChildren = realMenuData?.appMenuChildren?.length
+            ? realMenuData.appMenuChildren
+            : fallbackAppChildren;
 
         const windowChildren = buildWindowMenu(window, detectedApp);
         const appleChildren = buildAppleMenu();
 
+        let topLevelMenus = realMenuData?.topLevelMenus?.length
+            ? realMenuData.topLevelMenus.slice()
+            : STATIC_MENUS.slice(0, 4).concat([{ label: 'Window', children: windowChildren }], [STATIC_MENUS[4]]);
+
+        if (realMenuData?.topLevelMenus?.length) {
+            const hasWindowMenu = topLevelMenus.some(menu => menu.label.toLowerCase() === 'window');
+            if (!hasWindowMenu)
+                topLevelMenus.push({ label: 'Window', children: windowChildren });
+        }
+
         // Cache app menu data
         this._lastAppId = currentAppId;
         this._lastAppMenuData = appChildren;
+        this._lastWindowId = currentWindowId;
+        this._lastRealMenuKey = realMenuKey;
 
         const newMenuData = [
             { label: this._menuIcon, children: appleChildren },
             { label: appName, children: appChildren },
-            STATIC_MENUS[0],
-            STATIC_MENUS[1],
-            STATIC_MENUS[2],
-            STATIC_MENUS[3],
-            { label: "Window", children: windowChildren },
-            STATIC_MENUS[4],
+            ...topLevelMenus,
         ];
 
-        // Ensure we have exactly MENU_SLOT_COUNT buttons
-        while (this._buttons.length < MENU_SLOT_COUNT) {
+        // Ensure we have exactly the required number of buttons
+        while (this._buttons.length < newMenuData.length) {
             const idx = this._buttons.length;
             const data = newMenuData[idx];
             const btn = new TopLevelMenuButton(data.label, data.children, detectedApp, this);
@@ -402,21 +455,17 @@ export class MenuManager {
             this._buttons.push(btn);
         }
 
-        // Update existing buttons in-place
-        // Indices 1 and 6 are dynamic. Others are effectively static.
-        for (let i = 0; i < MENU_SLOT_COUNT; i++) {
+        for (let i = 0; i < newMenuData.length; i++) {
             const btn = this._buttons[i];
             const data = newMenuData[i];
 
             btn._appInstance = detectedApp;
             btn.updateLabel(data.label);
-            // Skip rebuild for static menus (File=2, Edit=3, View=4, Go=5, Help=7)
-            if (i !== 0 && i !== 1 && i !== 6) continue;
-            btn.rebuildMenu(data.children);
+            btn.rebuildMenu(data.children, data.onOpen ?? null);
         }
 
         // Destroy excess buttons (shouldn't happen, but defensive)
-        while (this._buttons.length > MENU_SLOT_COUNT) {
+        while (this._buttons.length > newMenuData.length) {
             const extra = this._buttons.pop();
             extra.destroy();
         }
@@ -448,5 +497,7 @@ export class MenuManager {
         }
         this.clear();
         this._virtualDevice = null;
+        this._realMenuManager?.destroy();
+        this._realMenuManager = null;
     }
 }
