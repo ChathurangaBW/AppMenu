@@ -284,6 +284,8 @@ function _findBusNameFromWmClass(wmClass) {
             'org.freedesktop.DBus', '/org/freedesktop/DBus',
             'org.freedesktop.DBus', 'ListNames',
             null, null, Gio.DBusCallFlags.NONE, 500, null
+        );
+        const names = result.deepUnpack()[0];
 
         // Try exact match first: eg "org.gnome.gedit" for wmClass "gedit"
         for (const name of names) {
