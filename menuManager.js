@@ -98,6 +98,7 @@ const TopLevelMenuButton = GObject.registerClass(
   class TopLevelMenuButton extends PanelMenu.Button {
     _init(label, children, appInstance = null, menuManagerInstance = null) {
       super._init(0.0, label);
+      this.add_style_class_name('appmenu-panel-button');
       this._appInstance = appInstance;
       this._menuManagerInstance = menuManagerInstance;
       this._isIcon = false;

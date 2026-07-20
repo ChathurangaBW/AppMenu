@@ -5,6 +5,14 @@
     padding: 0 6px;
 }
 
+/* Tighter panel spacing for AppMenu buttons */
+.appmenu-panel-button {
+    -natural-hpadding: 3px;
+    -minimum-hpadding: 3px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
 /* Distro icon — use panel foreground color for currentColor in SVGs */
 .system-status-icon {
     icon-size: 16px;
