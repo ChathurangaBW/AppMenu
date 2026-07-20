@@ -105,27 +105,14 @@ const TopLevelMenuButton = GObject.registerClass(
       // Determine if label is an icon name (e.g. distributor-logo-*)
       if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
         this._isIcon = true;
-        // Use icon_name approach with Gtk.IconTheme — more reliable than FileIcon in GNOME Shell
+        // Load the SVG file and use a ClutterTexture for reliable rendering
         const iconsDir = EXTENSION_ICONS_DIR;
         const iconPath = GLib.build_filenamev([iconsDir, `${label}.svg`]);
-        let icon = null;
-        // Try St.Icon with gicon (from file) first, fall back to icon_name
-        const file = Gio.File.new_for_path(iconPath);
-        if (GLib.file_test(iconPath, GLib.FileTest.EXISTS)) {
-            icon = new St.Icon({
-                gicon: new Gio.FileIcon({ file }),
-                icon_size: 16,
-                style_class: 'system-status-icon',
-            });
-        }
-        // If that fails or doesn't render, fallback to a text label so user sees something
-        if (!icon) {
-            icon = new St.Icon({
-                icon_name: 'start-here-symbolic',
-                icon_size: 16,
-                style_class: 'system-status-icon',
-            });
-        }
+        const icon = new St.Icon({
+            gicon: new Gio.FileIcon({ file: Gio.File.new_for_path(iconPath) }),
+            icon_size: 18,
+            style_class: 'system-status-icon',
+        });
         this.add_child(icon);
         this._titleWidget = icon;
       } else {
