@@ -69,7 +69,7 @@ const EXTENSION_ICONS_DIR = (() => {
     try {
         const url = import.meta.url;
         if (url.startsWith('file://')) {
-            const filePath = GLib.filename_from_uri(url, null)[0];
+            const [filePath] = GLib.filename_from_uri(url);
             const extensionDir = GLib.path_get_dirname(filePath);
             return GLib.build_filenamev([extensionDir, 'icons']);
         }
