@@ -106,22 +106,20 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         });
         settings.bind('debug-logging', debugLoggingRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(debugLoggingRow);
-    }
-}
+
         // Icon size
-        const iconSizeAdjustment = new Gtk.Adjustment({
-            lower: 12, upper: 36, step_increment: 2, page_increment: 4,
-            value: settings.get_int('icon-size') || 22,
-        });
         const iconSizeRow = new Adw.SpinRow({
             title: 'Icon Size',
-            subtitle: 'Panel icon size in pixels.',
-            adjustment: iconSizeAdjustment,
+            subtitle: 'Panel icon size in pixels (12–36).',
+            value: settings.get_int('icon-size') || 22,
+            adjustment: new Gtk.Adjustment({lower: 12, upper: 36, step_increment: 2}),
         });
-        iconSizeRow.connect('changed', () => {
-            settings.set_int('icon-size', iconSizeAdjustment.get_value());
+        iconSizeRow.connect('notify::value', () => {
+            settings.set_int('icon-size', iconSizeRow.get_value());
         });
         settings.connect('changed::icon-size', () => {
-            iconSizeAdjustment.set_value(settings.get_int('icon-size') || 22);
+            iconSizeRow.set_value(settings.get_int('icon-size') || 22);
         });
         group.add(iconSizeRow);
+    }
+}
