@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
@@ -50,6 +51,7 @@ function _recentItems() {
     }
 }
 
+const SearchDialog = GObject.registerClass(
 class SearchDialog extends ModalDialog.ModalDialog {
     constructor() {
         super({ styleClass: 'appmenu-search-dialog' });
@@ -293,7 +295,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
             }
         }
     }
-}
+});
 
 let _dialog = null;
 
