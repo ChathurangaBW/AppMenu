@@ -371,6 +371,8 @@ export class RealMenuManager {
         this._currentGtkContext = null;
         this._cachedActions = null;
         this._cachedWinActions = null;
+        this._lastWmClass = null;
+        this._registrarFailed = false;
     }
 
     get enabled() {
@@ -384,12 +386,16 @@ export class RealMenuManager {
     invalidate() {
         this._cachedActions = null;
         this._cachedWinActions = null;
+        this._lastWmClass = null;
+        this._registrarFailed = false;
         this._setBackend(null, null);
     }
 
     destroy() {
         this._cachedActions = null;
         this._cachedWinActions = null;
+        this._lastWmClass = null;
+        this._registrarFailed = false;
         this._setBackend(null, null);
         this._settings = null;
         this._onChanged = null;
@@ -404,22 +410,28 @@ export class RealMenuManager {
             return null;
         }
 
-        // 1) Try the dbusmenu registrar (requires X11 window ID on X11/Xwayland)
-        const registration = this._lookupRegistration(window);
-        if (registration) {
-            const key = `dbusmenu:${registration.service}|${registration.path}`;
-            this._cachedActions = null;
-            if (key !== this._currentKey)
-                this._setBackend('dbusmenu', registration);
-            return this.buildCurrentMenuModel(appName);
+        // 1) Registrar — only try once. If it fails (always on Wayland), never retry.
+        if (!this._registrarFailed) {
+            const registration = this._lookupRegistration(window);
+            if (registration) {
+                const key = `dbusmenu:${registration.service}|${registration.path}`;
+                this._cachedActions = null;
+                if (key !== this._currentKey)
+                    this._setBackend('dbusmenu', registration);
+                return this.buildCurrentMenuModel(appName);
+            }
+            this._registrarFailed = true;
         }
 
-        // 2) Try detectedApp first, then wmClass, then dynamic bus name scan
+        // 2) GTK actions — cached per wmClass, no D-Bus rescan on every focus
+        if (wmClass && wmClass === this._lastWmClass && this._currentGtkContext) {
+            return this.buildCurrentMenuModel(appName);
+        }
+        this._lastWmClass = wmClass;
+
         let gtkContext = this._lookupGtkAppContext(detectedApp);
         if (!gtkContext && wmClass) {
-            // Try as desktop ID
             gtkContext = this._lookupGtkAppContext({ get_id: () => wmClass });
-            // Try dynamic D-Bus name discovery
             if (!gtkContext) {
                 const busName = _findBusNameFromWmClass(wmClass);
                 if (busName) {
@@ -427,7 +439,6 @@ export class RealMenuManager {
                     gtkContext = { busName, objectPath, appId: wmClass };
                 }
             }
-            // Try D-Bus activation: activate the service then query
             if (!gtkContext) {
                 const candidateBus = _desktopIdToBusName(wmClass);
                 if (candidateBus) {
@@ -609,7 +620,7 @@ export class RealMenuManager {
                 new GLib.Variant('(u)', [windowId]),
                 new GLib.VariantType('(so)'),
                 Gio.DBusCallFlags.NONE,
-                -1,
+                1000,  // 1s timeout — don't block the shell
                 null,
             );
 
