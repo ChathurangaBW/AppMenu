@@ -702,9 +702,7 @@ export class RealMenuManager {
                 try { this._client.disconnect(id); } catch (_e) { /* ignore */ }
             });
             this._clientSignalIds = [];
-            this._client.run_dispose();
             this._client = null;
-        }
         this._currentGtkContext = null;
     }
 

@@ -36,7 +36,8 @@ const SETTINGS_PANELS = [
 
 function _recentItems() {
     try {
-        const [ok, bytes] = GLib.file_get_contents(RECENT_ITEMS_FILE);
+        const file = Gio.File.new_for_path(RECENT_ITEMS_FILE);
+        const [ok, bytes] = file.load_contents(null);
         if (!ok) return [];
         const xml = new TextDecoder().decode(bytes);
         const matches = [...xml.matchAll(/<bookmark href="([^"]+)"[\s\S]*?<title>([^<]*)<\/title>/g)];
@@ -60,6 +61,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._recentCache = null;
         this._resultButtons = [];
         this._selectedIndex = -1;
+        this._clutterTextSignals = [];
 
         this._entry = new St.Entry({
             style_class: 'appmenu-search-entry',
@@ -76,8 +78,10 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this.contentLayout.add_child(this._resultsBox);
 
         const clutterText = this._entry.clutter_text;
-        clutterText.connect('text-changed', () => this._scheduleSearch());
-        clutterText.connect('key-press-event', (_actor, event) => {
+        this._clutterTextSignals.push(
+            clutterText.connect('text-changed', () => this._scheduleSearch()));
+        this._clutterTextSignals.push(
+            clutterText.connect('key-press-event', (_actor, event) => {
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Escape) {
                 this.close();
@@ -96,8 +100,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
                 selected?.activate?.();
                 return Clutter.EVENT_STOP;
             }
-            return Clutter.EVENT_PROPAGATE;
-        });
+                return Clutter.EVENT_PROPAGATE;
+            }));
     }
 
     destroy() {
@@ -105,6 +109,26 @@ class SearchDialog extends ModalDialog.ModalDialog {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
         }
+        // Disconnect clutter text signals
+        if (this._entry?.clutter_text && this._clutterTextSignals) {
+            const ct = this._entry.clutter_text;
+            this._clutterTextSignals.forEach(id => { try { ct.disconnect(id); } catch (_e) {} });
+        }
+        this._clutterTextSignals = null;
+        // Destroy owned child actors
+        if (this._resultsBox) {
+            this._resultsBox.destroy_all_children();
+            this._resultsBox = null;
+        }
+        if (this._entry) {
+            this._entry.destroy();
+            this._entry = null;
+        }
+        // Release owned references
+        this._resultButtons = null;
+        this._recentCache = null;
+        this._appSystem = null;
+        this._selectedIndex = -1;
         super.destroy();
     }
 

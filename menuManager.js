@@ -50,7 +50,8 @@ const DISTRO_ICONS = {
 
 function detectDistroIcon() {
     try {
-        const [ok, contents] = GLib.file_get_contents('/etc/os-release');
+        const file = Gio.File.new_for_path('/etc/os-release');
+        const [ok, contents] = file.load_contents(null);
         if (!ok) return 'distributor-logo-debian';
         const text = new TextDecoder().decode(contents);
         const idMatch = text.match(/^ID=(.+)$/m);

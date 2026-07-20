@@ -25,11 +25,12 @@ rm -f "$EGO_ZIP" "$SOURCE_ZIP" "$EXT_ZIP" "$RUN_INSTALLER" "$BIN_INSTALLER" "$DE
 zip -r "$SOURCE_ZIP" . -x '.git/*' '.git' 'dist/*' 'dist' '.scratch/*' '.scratch' >/dev/null
 
 # Minimal extensions.gnome.org upload zip: extension files at archive root
+# NOTE: gschemas.compiled intentionally omitted per EGO-P-006 (unnecessary for 45+)
 zip -r "$EGO_ZIP" \
   metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
   userSwitcher.js workspaceIndicator.js searchDialog.js logger.js prefs.js stylesheet.css \
   icons.json actions menus icons \
-  schemas/org.gnome.shell.extensions.appmenu.gschema.xml schemas/gschemas.compiled >/dev/null
+  schemas/org.gnome.shell.extensions.appmenu.gschema.xml >/dev/null
 
 # Manual install zip: one top-level UUID directory
 mkdir -p "$SCRATCH_DIR/$EXT_DIR_NAME"
