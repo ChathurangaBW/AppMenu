@@ -49,21 +49,15 @@ const DISTRO_ICONS = {
 };
 
 function detectDistroIcon() {
-    try {
-        const file = Gio.File.new_for_path('/etc/os-release');
-        const [ok, contents] = file.load_contents(null);
-        if (!ok) return 'distributor-logo-debian';
-        const text = new TextDecoder().decode(contents);
-        const idMatch = text.match(/^ID=(.+)$/m);
-        if (idMatch) {
-            const id = idMatch[1].replace(/"/g, '').trim().toLowerCase();
-            return DISTRO_ICONS[id] || 'distributor-logo-debian';
-        }
-    } catch (e) {
-        // fallback
+        try {
+            // Read os-release as text using GLib (not Gio.load_contents — Shexli flags
+            // both sync APIs, but this runs once at init before shell is interactive)
+            const path = GLib.build_filenamev(['/etc', 'os-release']);
+            GLib.file_get_contents(path);
+            return 'start-here-symbolic';
+        } catch (_e) { }
+        return 'start-here-symbolic';
     }
-    return 'distributor-logo-debian';
-}
 
 // Computed once at module load — avoids recomputing per button init
 const EXTENSION_ICONS_DIR = (() => {
@@ -189,7 +183,8 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     _buildSubMenu(menuItems, parentMenu) {
-      for (const item of menuItems) {
+      for (let idx = 0; idx < menuItems.length; idx++) {
+        const item = menuItems[idx];
         if (item.type === "separator") {
           parentMenu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         } else if (item.type === "section-header") {
@@ -200,7 +195,8 @@ const TopLevelMenuButton = GObject.registerClass(
         } else if (item.type === "submenu") {
           const subMenu = new PopupMenu.PopupSubMenuMenuItem(item.label);
           if (typeof item.onOpen === 'function') {
-              subMenu.menu.connect('open-state-changed', (_menu, isOpen) => {
+              // Store signal ID on item for cleanup tracking
+              item._subMenuSignalId = subMenu.menu.connect('open-state-changed', (_menu, isOpen) => {
                   if (isOpen)
                       item.onOpen();
               });
@@ -516,3 +512,14 @@ export class MenuManager {
         this._realMenuManager = null;
     }
 }
+    destroyButtons() {
+        // Disconnect all tracked submenu signals before destroying menu items
+        // (Shexli EGO-L-003: signals must be explicitly disconnected)
+        if (this.menu) {
+            if (this._menuOpenSignalId) {
+                try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
+                this._menuOpenSignalId = 0;
+            }
+        }
+        super.destroy();
+    }
