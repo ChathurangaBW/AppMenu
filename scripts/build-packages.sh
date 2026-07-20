@@ -26,7 +26,7 @@ zip -r "$SOURCE_ZIP" . -x '.git/*' '.git' 'dist/*' 'dist' '.scratch/*' '.scratch
 
 # Minimal extensions.gnome.org upload zip: extension files at archive root
 zip -r "$EGO_ZIP" \
-  metadata.json extension.js menuManager.js recentItemsSubmenu.js documentTooltip.js \
+  metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
   userSwitcher.js workspaceIndicator.js searchDialog.js logger.js prefs.js stylesheet.css \
   icons.json actions menus icons \
   schemas/org.gnome.shell.extensions.appmenu.gschema.xml schemas/gschemas.compiled >/dev/null
