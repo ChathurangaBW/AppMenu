@@ -163,7 +163,7 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _setIcon(label) {
         if (!this._titleWidget || !label) return;
-        this._titleWidget.icon_size = this._menuManagerInstance?._cachedIconSize ?? 22;
+        this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
@@ -300,7 +300,7 @@ export class MenuManager {
                     if (this._buttons.length > 0) {
                         const btn0 = this._buttons[0];
                         if (btn0._isIcon && btn0._titleWidget) {
-                            btn0._titleWidget.icon_size = this._cachedIconSize;
+                            btn0._titleWidget.set_icon_size(this._cachedIconSize);
                         }
                     }
                 }),
