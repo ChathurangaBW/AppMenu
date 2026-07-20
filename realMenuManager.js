@@ -703,6 +703,7 @@ export class RealMenuManager {
             });
             this._clientSignalIds = [];
             this._client = null;
+        }
         this._currentGtkContext = null;
     }
 
