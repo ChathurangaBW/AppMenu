@@ -493,14 +493,3 @@ export class MenuManager {
         this._realMenuManager = null;
     }
 }
-    destroyButtons() {
-        // Disconnect all tracked submenu signals before destroying menu items
-        // (Shexli EGO-L-003: signals must be explicitly disconnected)
-        if (this.menu) {
-            if (this._menuOpenSignalId) {
-                try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
-                this._menuOpenSignalId = 0;
-            }
-        }
-        super.destroy();
-    }
