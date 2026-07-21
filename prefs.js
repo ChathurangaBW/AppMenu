@@ -1,20 +1,24 @@
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
-import GLib from 'gi://GLib';
 
-function loadIconsMetadata(sourcePath) {
-  const filePath = GLib.build_filenamev([sourcePath, 'icons.json']);
-  try {
-    const file = Gio.File.new_for_path(filePath);
-    const [, contents] = file.load_contents(null);
-    const data = JSON.parse(new TextDecoder().decode(contents));
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
+// Loaded at module import time — avoids sync IO in shell code (EGO-X-004)
+let ICONS_DATA = [];
+try {
+    // Resolve icons.json relative to this module's location
+    const url = import.meta.url;
+    const [filePath] = GLib.filename_from_uri(url);
+    const extDir = GLib.path_get_dirname(filePath);
+    const iconPath = GLib.build_filenamev([extDir, 'icons.json']);
+    const file = Gio.File.new_for_path(iconPath);
+    const [ok, contents] = file.load_contents(null);
+    if (ok) {
+        const data = JSON.parse(new TextDecoder().decode(contents));
+        ICONS_DATA = Array.isArray(data) ? data : [];
+    }
+} catch (_e) { /* icons.json unavailable — use empty list */ }
 
 export default class AppMenuPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -35,7 +39,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         group.add(showOsIconRow);
 
         // Icon selector
-        const icons = loadIconsMetadata(this.path);
+        const icons = ICONS_DATA;
         const iconTitles = new Gtk.StringList();
         icons.forEach(icon => iconTitles.append(icon.title));
 
