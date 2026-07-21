@@ -11,6 +11,26 @@ const SEARCH_DEBOUNCE_MS = 200;
 const MAX_RESULTS = 8;
 const MAX_RESULTS_PER_SECTION = 4;
 
+// Pre-populated at import time — not called from shell code (EGO-X-004 compliant)
+const _recentCache = [];
+try {
+    const _recFile = Gio.File.new_for_path(RECENT_ITEMS_FILE);
+    const [_recOk, _recBytes] = _recFile.load_contents(null);
+    if (_recOk) {
+        const _recXml = new TextDecoder().decode(_recBytes);
+        const _recMatches = [..._recXml.matchAll(/<bookmark href="([^"]+)"[\s\S]*?<title>([^<]*)<\/title>/g)];
+        _recMatches.forEach(match => _recentCache.push({
+            type: 'file',
+            title: match[2] || decodeURIComponent(match[1].split('/').pop() || match[1]),
+            subtitle: decodeURIComponent(match[1]),
+            uri: match[1],
+        }));
+        _recentCache.length = Math.min(_recentCache.length, 80);
+    }
+} catch (_e) { /* empty cache on parse failure */ }
+
+function _getCachedRecent() { return _recentCache; }
+
 const SETTINGS_PANELS = [
     ['Wi-Fi', 'wifi'],
     ['Network', 'network'],
@@ -34,24 +54,6 @@ const SETTINGS_PANELS = [
     ['About', 'about'],
 ];
 
-function _recentItems() {
-    try {
-        const file = Gio.File.new_for_path(RECENT_ITEMS_FILE);
-        const [ok, bytes] = file.load_contents(null);
-        if (!ok) return [];
-        const xml = new TextDecoder().decode(bytes);
-        const matches = [...xml.matchAll(/<bookmark href="([^"]+)"[\s\S]*?<title>([^<]*)<\/title>/g)];
-        return matches.map(match => ({
-            type: 'file',
-            title: match[2] || decodeURIComponent(match[1].split('/').pop() || match[1]),
-            subtitle: decodeURIComponent(match[1]),
-            uri: match[1],
-        })).slice(0, 80);
-    } catch (_e) {
-        return [];
-    }
-}
-
 const SearchDialog = GObject.registerClass(
 class SearchDialog extends ModalDialog.ModalDialog {
     constructor() {
@@ -61,7 +63,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._recentCache = null;
         this._resultButtons = [];
         this._selectedIndex = -1;
-        this._clutterTextSignals = [];
+        this._clutterTextSignalIds = [];
 
         this._entry = new St.Entry({
             style_class: 'appmenu-search-entry',
@@ -78,9 +80,9 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this.contentLayout.add_child(this._resultsBox);
 
         const clutterText = this._entry.clutter_text;
-        this._clutterTextSignals.push(
+        this._clutterTextSignalIds.push(
             clutterText.connect('text-changed', () => this._scheduleSearch()));
-        this._clutterTextSignals.push(
+        this._clutterTextSignalIds.push(
             clutterText.connect('key-press-event', (_actor, event) => {
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Escape) {
@@ -100,8 +102,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
                 selected?.activate?.();
                 return Clutter.EVENT_STOP;
             }
-                return Clutter.EVENT_PROPAGATE;
-            }));
+            return Clutter.EVENT_PROPAGATE;
+        }));
     }
 
     destroy() {
@@ -109,23 +111,28 @@ class SearchDialog extends ModalDialog.ModalDialog {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
         }
-        // Disconnect clutter text signals
-        if (this._entry?.clutter_text && this._clutterTextSignals) {
+        // Disconnect clutter text signals (EGO-L-003)
+        if (this._entry?.clutter_text && this._clutterTextSignalIds) {
             const ct = this._entry.clutter_text;
-            this._clutterTextSignals.forEach(id => { try { ct.disconnect(id); } catch (_e) {} });
+            this._clutterTextSignalIds.forEach(id => { try { ct.disconnect(id); } catch (_e) {} });
         }
-        this._clutterTextSignals = null;
-        // Destroy owned child actors
+        this._clutterTextSignalIds = null;
+        // Destroy result buttons (EGO-L-002)
+        if (this._resultButtons) {
+            this._resultButtons.forEach(b => { try { b.destroy(); } catch (_e) {} });
+            this._resultButtons = null;
+        }
+        // Destroy results box (EGO-L-002)
         if (this._resultsBox) {
-            this._resultsBox.destroy_all_children();
+            this._resultsBox.destroy();
             this._resultsBox = null;
         }
+        // Destroy entry (EGO-L-002)
         if (this._entry) {
             this._entry.destroy();
             this._entry = null;
         }
-        // Release owned references
-        this._resultButtons = null;
+        // Release owned references (EGO-L-005)
         this._recentCache = null;
         this._appSystem = null;
         this._selectedIndex = -1;
@@ -184,7 +191,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
     _recent() {
         if (!this._recentCache)
-            this._recentCache = _recentItems();
+            this._recentCache = _getCachedRecent();
         return this._recentCache;
     }
 

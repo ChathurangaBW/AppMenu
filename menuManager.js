@@ -20,44 +20,8 @@ import { RecentItemsSubmenu } from './recentItemsSubmenu.js';
 import { RealMenuManager } from './realMenuManager.js';
 import * as Logger from './logger.js';
 
-// Distro icon map — local symbolic SVG icons for panel-friendly display
-const DISTRO_ICONS = {
-    'debian':     'distributor-logo-debian',
-    'ubuntu':     'distributor-logo-ubuntu',
-    'fedora':     'distributor-logo-fedora',
-    'arch':       'distributor-logo-archlinux',
-    'manjaro':    'distributor-logo-manjaro',
-    'opensuse':   'distributor-logo-opensuse',
-    'centos':     'distributor-logo-fedora',
-    'rhel':       'distributor-logo-fedora',
-    'alpine':     'distributor-logo-alpine',
-    'mint':       'distributor-logo-linux-mint',
-    'pop':        'distributor-logo-pop-os',
-    'elementary': 'distributor-logo-elementary',
-    'garuda':     'distributor-logo-archlinux',
-    'nixos':      'distributor-logo-nixos',
-    'void':       'distributor-logo-void',
-    'gentoo':     'distributor-logo-gentoo',
-    'slackware':  'distributor-logo-archlinux',
-    'solus':      'distributor-logo-fedora',
-    'zorin':      'distributor-logo-zorin',
-    'endeavour':  'distributor-logo-endeavouros',
-    'nobara':     'distributor-logo-fedora',
-    'kali':       'distributor-logo-kali-linux',
-    'deepin':     'distributor-logo-debian',
-    'devuan':     'distributor-logo-debian',
-};
-
-function detectDistroIcon() {
-        try {
-            // Read os-release as text using GLib (not Gio.load_contents — Shexli flags
-            // both sync APIs, but this runs once at init before shell is interactive)
-            const path = GLib.build_filenamev(['/etc', 'os-release']);
-            GLib.file_get_contents(path);
-            return 'start-here-symbolic';
-        } catch (_e) { }
-        return 'start-here-symbolic';
-    }
+// Default panel icon — `start-here-symbolic` adapts to every distro's icon theme
+const DEFAULT_ICON = 'start-here-symbolic';
 
 // Computed once at module load — avoids recomputing per button init
 const EXTENSION_ICONS_DIR = (() => {
@@ -119,6 +83,7 @@ const TopLevelMenuButton = GObject.registerClass(
       }
       this._menuOpenSignalId = 0;
       this._menuOpenHandler = null;
+      this._subMenuSignalIds = [];
 
       this._setMenuOpenHandler(null);
       this._buildSubMenu(children, this.menu);
@@ -183,6 +148,12 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     _buildSubMenu(menuItems, parentMenu) {
+      // Disconnect previous build signals when menu is rebuilt
+      this._subMenuSignalIds.forEach(({target, id}) => {
+          try { target.disconnect(id); } catch (_e) {}
+      });
+      this._subMenuSignalIds = [];
+
       for (let idx = 0; idx < menuItems.length; idx++) {
         const item = menuItems[idx];
         if (item.type === "separator") {
@@ -195,11 +166,11 @@ const TopLevelMenuButton = GObject.registerClass(
         } else if (item.type === "submenu") {
           const subMenu = new PopupMenu.PopupSubMenuMenuItem(item.label);
           if (typeof item.onOpen === 'function') {
-              // Store signal ID on item for cleanup tracking
-              item._subMenuSignalId = subMenu.menu.connect('open-state-changed', (_menu, isOpen) => {
+              const sid = subMenu.menu.connect('open-state-changed', (_menu, isOpen) => {
                   if (isOpen)
                       item.onOpen();
               });
+              this._subMenuSignalIds.push({ target: subMenu.menu, id: sid });
           }
           this._buildSubMenu(item.children, subMenu.menu);
           parentMenu.addMenuItem(subMenu);
@@ -220,17 +191,27 @@ const TopLevelMenuButton = GObject.registerClass(
             menuItem.setOrnament(ornament);
           }
           if (typeof item.activate === 'function') {
-            menuItem.connect("activate", () => {
-              item.activate();
-            });
+            const aid = menuItem.connect("activate", () => { item.activate(); });
+            this._subMenuSignalIds.push({ target: menuItem, id: aid });
           } else if (item.action) {
-            menuItem.connect("activate", () => {
-              this._executeNativeAction(item.action, true);
-            });
+            const aid = menuItem.connect("activate", () => { this._executeNativeAction(item.action, true); });
+            this._subMenuSignalIds.push({ target: menuItem, id: aid });
           }
           parentMenu.addMenuItem(menuItem);
         }
       }
+    }
+
+    destroy() {
+        if (this.menu && this._menuOpenSignalId) {
+            try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
+            this._menuOpenSignalId = 0;
+        }
+        this._subMenuSignalIds.forEach(({target, id}) => {
+            try { target.disconnect(id); } catch (_e) {}
+        });
+        this._subMenuSignalIds = [];
+        super.destroy();
     }
   }
 );
@@ -252,7 +233,7 @@ export class MenuManager {
         this._cachedBlacklistSet = null;
 
         // Auto-detected distro icon (computed once, used as fallback)
-        this._distroIcon = detectDistroIcon();
+        this._distroIcon = DEFAULT_ICON;
         this._realMenuManager = new RealMenuManager(this._settings, () => {
             this.updateMenuForWindow(global.display.get_focus_window(), true);
         });
@@ -312,7 +293,7 @@ export class MenuManager {
     get _menuIcon() {
         return (this._cachedMenuIcon && this._cachedMenuIcon.length > 0)
             ? this._cachedMenuIcon
-            : this._distroIcon;
+            : DEFAULT_ICON;
     }
 
     get _showOsIcon() {
