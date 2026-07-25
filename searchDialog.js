@@ -31,6 +31,8 @@ try {
 
 function _getCachedRecent() { return _recentCache; }
 
+import { _ } from '../i18n.js';
+
 const SETTINGS_PANELS = [
     ['Wi-Fi', 'wifi'],
     ['Network', 'network'],
@@ -67,7 +69,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
         this._entry = new St.Entry({
             style_class: 'appmenu-search-entry',
-            hint_text: 'Search apps, recent files, and settings',
+            hint_text: _('Search apps, recent files, and settings'),
             can_focus: true,
             track_hover: true,
         });
@@ -165,7 +167,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
     _defaultResults() {
         return [
-            { type: 'settings', title: 'System Settings', subtitle: 'Open GNOME Settings', panel: '' },
+            { type: 'settings', title: _('System Settings'), subtitle: _('Open GNOME Settings'), panel: '' },
             ...this._apps().slice(0, 4),
             ...this._recent().slice(0, 3),
         ];
@@ -227,9 +229,9 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
     _groupResults(results) {
         const groups = [
-            ['Applications', results.filter(item => item.type === 'app').slice(0, MAX_RESULTS_PER_SECTION)],
-            ['Recent Files', results.filter(item => item.type === 'file').slice(0, MAX_RESULTS_PER_SECTION)],
-            ['Settings', results.filter(item => item.type === 'settings').slice(0, MAX_RESULTS_PER_SECTION)],
+            [_('Applications'), results.filter(item => item.type === 'app').slice(0, MAX_RESULTS_PER_SECTION)],
+            [_('Recent Files'), results.filter(item => item.type === 'file').slice(0, MAX_RESULTS_PER_SECTION)],
+            [_('Settings'), results.filter(item => item.type === 'settings').slice(0, MAX_RESULTS_PER_SECTION)],
         ];
 
         return groups.filter(([, items]) => items.length > 0);
@@ -262,7 +264,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._selectedIndex = -1;
         if (results.length === 0) {
             this._resultsBox.add_child(new St.Label({
-                text: 'No results',
+                text: _('No results'),
                 style_class: 'appmenu-search-empty',
             }));
             return;

@@ -1,15 +1,17 @@
+import { _ } from '../i18n.js';
+
 export function buildEditMenu() {
     return [
-        { label: "Undo", action: "undo" },
-        { label: "Redo", action: "redo" },
+        { label: _("Undo"), action: "undo" },
+        { label: _("Redo"), action: "redo" },
         { type: "separator" },
-        { label: "Cut", action: "cut" },
-        { label: "Copy", action: "copy" },
-        { label: "Paste", action: "paste" },
-        { label: "Delete", action: "delete-item" },
+        { label: _("Cut"), action: "cut" },
+        { label: _("Copy"), action: "copy" },
+        { label: _("Paste"), action: "paste" },
+        { label: _("Delete"), action: "delete-item" },
         { type: "separator" },
-        { label: "Select All", action: "select-all" },
+        { label: _("Select All"), action: "select-all" },
         { type: "separator" },
-        { label: "Emoji & Symbols", action: "emoji-picker" },
+        { label: _("Emoji & Symbols"), action: "emoji-picker" },
     ];
 }

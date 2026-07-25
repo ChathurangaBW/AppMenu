@@ -3,6 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
+import { _ } from './i18n.js';
 
 // Loaded at module import time — avoids sync IO in shell code (EGO-X-004)
 let ICONS_DATA = [];
@@ -32,8 +33,8 @@ export default class AppMenuPreferences extends ExtensionPreferences {
 
         // Show OS icon
         const showOsIconRow = new Adw.SwitchRow({
-            title: 'Show OS icon',
-            subtitle: 'Show the logo icon in the top panel.',
+            title: _('Show OS icon'),
+            subtitle: _('Show the logo icon in the top panel.'),
         });
         settings.bind('show-os-icon', showOsIconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showOsIconRow);
@@ -46,7 +47,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         const deriveIconName = (path) => path.endsWith('.svg') ? path.slice(0, -4) : path;
 
         const iconRow = new Adw.ComboRow({
-            title: 'Icon',
+            title: _('Icon'),
             model: iconTitles,
         });
 
@@ -74,47 +75,47 @@ export default class AppMenuPreferences extends ExtensionPreferences {
 
         // Lock to focused app
         const lockRow = new Adw.SwitchRow({
-            title: 'Lock to focused app',
-            subtitle: 'Only update menu when switching windows.',
+            title: _('Lock to focused app'),
+            subtitle: _('Only update menu when switching windows.'),
         });
         settings.bind('lock-to-focused-app', lockRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(lockRow);
 
         // Show user switcher
         const showUserSwitcherRow = new Adw.SwitchRow({
-            title: 'Show User Switcher',
-            subtitle: 'Show user switcher in the right side of the panel.',
+            title: _('Show User Switcher'),
+            subtitle: _('Show user switcher in the right side of the panel.'),
         });
         settings.bind('show-user-switcher', showUserSwitcherRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showUserSwitcherRow);
 
         // Show workspace indicator
         const showWorkspaceIndicatorRow = new Adw.SwitchRow({
-            title: 'Show Workspace Indicator',
-            subtitle: 'Show workspace navigation dots in the top panel.',
+            title: _('Show Workspace Indicator'),
+            subtitle: _('Show workspace navigation dots in the top panel.'),
         });
         settings.bind('show-workspace-indicator', showWorkspaceIndicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(showWorkspaceIndicatorRow);
 
         const realMenusRow = new Adw.SwitchRow({
-            title: 'Use real application menus',
-            subtitle: 'Read exported D-Bus menus when apps provide them, and fall back automatically otherwise.',
+            title: _('Use real application menus'),
+            subtitle: _('Read exported D-Bus menus when apps provide them, and fall back automatically otherwise.'),
         });
         settings.bind('use-real-menus', realMenusRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(realMenusRow);
 
         // Debug logging
         const debugLoggingRow = new Adw.SwitchRow({
-            title: 'Debug Logging',
-            subtitle: 'Write diagnostic AppMenu logs to the GNOME Shell journal.',
+            title: _('Debug Logging'),
+            subtitle: _('Write diagnostic AppMenu logs to the GNOME Shell journal.'),
         });
         settings.bind('debug-logging', debugLoggingRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         group.add(debugLoggingRow);
 
         // Icon size
         const iconSizeRow = new Adw.SpinRow({
-            title: 'Icon Size',
-            subtitle: 'Panel icon size in pixels (12–36).',
+            title: _('Icon Size'),
+            subtitle: _('Panel icon size in pixels (12–36).'),
             value: settings.get_int('icon-size') || 22,
             adjustment: new Gtk.Adjustment({lower: 12, upper: 36, step_increment: 2}),
         });

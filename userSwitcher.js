@@ -12,6 +12,7 @@ import St from 'gi://St';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from './i18n.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import {Avatar as UserAvatar} from 'resource:///org/gnome/shell/ui/userWidget.js';
 
@@ -251,7 +252,7 @@ export const UserSwitcherButton = GObject.registerClass(
                 if (this._isDestroyed || !this.menu) return;
 
                 if (users.length === 0) {
-                    const placeholder = new PopupMenu.PopupMenuItem('No eligible user accounts found');
+                    const placeholder = new PopupMenu.PopupMenuItem(_('No eligible user accounts found'));
                     placeholder.setSensitive(false);
                     this.menu.addMenuItem(placeholder);
                 } else {
@@ -278,9 +279,9 @@ export const UserSwitcherButton = GObject.registerClass(
                 }
 
                 this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                this._addActionItem('Login Window...', () => this._gotoLoginWindow());
+                this._addActionItem(_('Login Window...'), () => this._gotoLoginWindow());
                 this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                this._addActionItem('Users & Groups Preferences...', () => this._openUserSettings());
+                this._addActionItem(_('Users & Groups Preferences...'), () => this._openUserSettings());
 
                 this._updatePanelIcon(users, currentUserName);
             } finally {

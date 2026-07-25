@@ -1,17 +1,19 @@
+import { _ } from '../i18n.js';
+
 export function buildGoMenu() {
     return [
-        { label: "Back", action: "go-back" },
-        { label: "Forward", action: "go-forward" },
+        { label: _("Back"), action: "go-back" },
+        { label: _("Forward"), action: "go-forward" },
         { type: "separator" },
-        { label: "Recents", action: "go-recents" },
-        { label: "Documents", action: "go-documents" },
-        { label: "Desktop", action: "go-desktop" },
-        { label: "Downloads", action: "go-downloads" },
-        { label: "Home", action: "go-home" },
+        { label: _("Recents"), action: "go-recents" },
+        { label: _("Documents"), action: "go-documents" },
+        { label: _("Desktop"), action: "go-desktop" },
+        { label: _("Downloads"), action: "go-downloads" },
+        { label: _("Home"), action: "go-home" },
         { type: "separator" },
-        { label: "Computer", action: "go-computer" },
-        { label: "Network", action: "go-network" },
-        { label: "Applications", action: "go-applications" },
-        { label: "Utilities", action: "go-utilities" },
+        { label: _("Computer"), action: "go-computer" },
+        { label: _("Network"), action: "go-network" },
+        { label: _("Applications"), action: "go-applications" },
+        { label: _("Utilities"), action: "go-utilities" },
     ];
 }

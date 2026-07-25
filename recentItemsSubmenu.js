@@ -8,6 +8,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
+import { _ } from './i18n.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -16,6 +17,7 @@ import {DocumentTooltip} from './documentTooltip.js';
 // Limits for recent items per section
 const FILES_RECENT_LIMIT = 12;
 const APPLICATIONS_RECENT_LIMIT = 8;
+
 const RECENT_ITEMS_FILE = GLib.build_filenamev([
   GLib.get_user_data_dir(),
   'recently-used.xbel',
@@ -186,7 +188,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
     const hasApplications = recentApplications.length > 0;
 
     if (!hasFiles && !hasApplications) {
-      const placeholder = new PopupMenu.PopupMenuItem('No recent items');
+      const placeholder = new PopupMenu.PopupMenuItem(_('No recent items'));
       placeholder.setSensitive(false);
       menu.addMenuItem(placeholder);
       return;
@@ -199,7 +201,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
         menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
       }
 
-      const applicationsHeader = this._createSectionHeader('Applications');
+      const applicationsHeader = this._createSectionHeader(_('Applications'));
       menu.addMenuItem(applicationsHeader);
 
       recentApplications.forEach(({ title: appTitle, appInfo, gicon, desktopId }) => {
@@ -220,7 +222,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
         menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
       }
 
-      const filesHeader = this._createSectionHeader('Documents');
+      const filesHeader = this._createSectionHeader(_('Documents'));
       menu.addMenuItem(filesHeader);
 
       files.forEach(({ title: itemTitle, uri, isDirectory }) => {
@@ -241,7 +243,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
     if (hasEntries) {
       menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      const clearItem = new PopupMenu.PopupMenuItem('Clear Menu');
+      const clearItem = new PopupMenu.PopupMenuItem(_('Clear Menu'));
       clearItem.connect('activate', () => this._clearRecentItems());
       menu.addMenuItem(clearItem);
     }
@@ -825,7 +827,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
     } catch (error) {
       const displayName = this._formatDocumentTooltip(uri) ?? uri;
       this._notifyLaunchFailure(
-        'Item unavailable',
+        _('Item unavailable'),
         `Could not open "${displayName}".`
       );
       logError(error, `Failed to open recent item: ${uri}`);
@@ -854,7 +856,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
         desktopId ||
         'unknown';
       this._notifyLaunchFailure(
-        'Application unavailable',
+        _('Application unavailable'),
         `Could not launch "${fallbackId}".`
       );
       logError(error, `Failed to launch application: ${fallbackId}`);

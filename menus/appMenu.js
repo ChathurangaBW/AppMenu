@@ -2,26 +2,28 @@
  * Build the app-name submenu.
  * Dynamic — depends on the currently focused app and its open windows.
  */
+import { _ } from '../i18n.js';
+
 export function buildAppMenu(appName, detectedApp, focusedWindow = null) {
     const children = [];
 
     const canOpenPreferences = Boolean(detectedApp?.get_app_info?.());
 
     children.push(
-        { label: `About ${appName}`, action: `app-details:${detectedApp ? detectedApp.get_id() : ''}`, sensitive: Boolean(detectedApp?.get_id?.()) },
+        { label: _("About %s").replace('%s', appName), action: `app-details:${detectedApp ? detectedApp.get_id() : ''}`, sensitive: Boolean(detectedApp?.get_id?.()) },
         { type: "separator" },
-        { label: "Settings", action: "open-app-preferences", sensitive: canOpenPreferences },
+        { label: _("Settings"), action: "open-app-preferences", sensitive: canOpenPreferences },
         { type: "separator" },
-        { label: `Hide ${appName}`, action: "hide-app", sensitive: Boolean(focusedWindow) },
-        { label: "Hide Others", action: "hide-others", sensitive: Boolean(focusedWindow) },
-        { label: "Show All", action: "show-all" },
+        { label: _("Hide %s").replace('%s', appName), action: "hide-app", sensitive: Boolean(focusedWindow) },
+        { label: _("Hide Others"), action: "hide-others", sensitive: Boolean(focusedWindow) },
+        { label: _("Show All"), action: "show-all" },
         { type: "separator" }
     );
 
     if (detectedApp) {
         const openWindows = detectedApp.get_windows();
         if (openWindows.length > 0) {
-            children.push({ type: "section-header", label: "Open Windows" });
+            children.push({ type: "section-header", label: _("Open Windows") });
             openWindows.forEach(win => {
                 children.push({
                     label: win.get_title() || appName,
@@ -34,33 +36,30 @@ export function buildAppMenu(appName, detectedApp, focusedWindow = null) {
     }
 
     children.push(
-        { label: "New Window", action: "new-app-window" },
+        { label: _("New Window"), action: "new-app-window" },
         { type: "separator" },
-        { label: `Quit ${appName}`, action: "close" },
+        { label: _("Quit %s").replace('%s', appName), action: "close" },
     );
 
     return children;
 }
 
-// Cached fallback menu — computed once, never changes
-const FALLBACK_MENU = [
-    { label: "About AppMenu", action: "about-appmenu" },
-    { type: "separator" },
-    { label: "AppMenu Settings", action: "open-settings-ext" },
-    { type: "separator" },
-    { label: "Hide AppMenu", action: "hide-app" },
-    { label: "Hide Others", action: "hide-others" },
-    { label: "Show All", action: "show-all" },
-    { type: "separator" },
-    { label: "Force Quit…", action: "force-quit" },
-    { type: "separator" },
-    { label: "Empty Trash...", action: "empty-bin" },
-];
-
 /**
  * Build the fallback app menu when no app is focused (desktop state).
- * Mirrors the file-manager app menu.
+ * Mirrors the file-manager app menu. Built fresh each call for i18n.
  */
 export function buildFallbackAppMenu() {
-    return FALLBACK_MENU;
+    return [
+        { label: _("About AppMenu"), action: "about-appmenu" },
+        { type: "separator" },
+        { label: _("AppMenu Settings"), action: "open-settings-ext" },
+        { type: "separator" },
+        { label: _("Hide AppMenu"), action: "hide-app" },
+        { label: _("Hide Others"), action: "hide-others" },
+        { label: _("Show All"), action: "show-all" },
+        { type: "separator" },
+        { label: _("Force Quit…"), action: "force-quit" },
+        { type: "separator" },
+        { label: _("Empty Trash..."), action: "empty-bin" },
+    ];
 }

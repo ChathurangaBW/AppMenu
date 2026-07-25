@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Dbusmenu from 'gi://Dbusmenu?version=0.4';
 import * as Logger from './logger.js';
+import { _ } from './i18n.js';
 
 const REGISTRAR_BUS_NAME = 'com.canonical.AppMenu.Registrar';
 const REGISTRAR_OBJECT_PATH = '/com/canonical/AppMenu/Registrar';
@@ -170,7 +171,7 @@ function _categoryForAction(name) {
 function _labelForAction(name) {
     const known = KNOWN_LABELS.get(name);
     if (known)
-        return known;
+        return _(known);
     return _humanizeActionName(name);
 }
 
@@ -849,14 +850,14 @@ export class RealMenuManager {
         if (hasSubmenu) {
             return {
                 type: 'submenu',
-                label: label || 'More',
+                label: _('More'),
                 children,
                 onOpen: () => this._aboutToShow(item),
             };
         }
 
         return {
-            label: label || 'Untitled',
+            label: _('Untitled'),
             sensitive: _isEnabled(item),
             ornament: _getOrnament(item),
             activate: () => this._activateItem(item),

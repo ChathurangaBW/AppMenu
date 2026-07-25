@@ -1,6 +1,7 @@
+import { _ } from '../i18n.js';
+
 export function buildHelpMenu() {
     return [
-        { label: "Send Feedback", action: "send-feedback" },
-        { label: "GNOME Help", action: "open-system-help" },
+        { label: _("Send Feedback"), action: "send-feedback" },
     ];
 }

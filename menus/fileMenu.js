@@ -1,20 +1,22 @@
+import { _ } from '../i18n.js';
+
 export function buildFileMenu() {
     return [
-        { label: "Open Home", action: "new-finder-win" },
-        { label: "New Folder", action: "new-folder" },
-        { label: "New Tab", action: "new-tab" },
-        { label: "Open", action: "virtual-open" },
-        { label: "Open With", action: "native-open-with" },
-        { label: "Print", action: "print" },
+        { label: _("Open Home"), action: "new-finder-win" },
+        { label: _("New Folder"), action: "new-folder" },
+        { label: _("New Tab"), action: "new-tab" },
+        { label: _("Open"), action: "virtual-open" },
+        { label: _("Open With"), action: "native-open-with" },
+        { label: _("Print"), action: "print" },
         { type: "separator" },
-        { label: "Get Info", action: "properties" },
-        { label: "Rename", action: "rename-file" },
+        { label: _("Get Info"), action: "properties" },
+        { label: _("Rename"), action: "rename-file" },
         { type: "separator" },
-        { label: "Find", action: "find" },
+        { label: _("Find"), action: "find" },
         { type: "separator" },
-        { label: "Move to Trash", action: "delete-item" },
-        { label: "Eject", action: "eject" },
+        { label: _("Move to Trash"), action: "delete-item" },
+        { label: _("Eject"), action: "eject" },
         { type: "separator" },
-        { label: "Close Window", action: "close" },
+        { label: _("Close Window"), action: "close" },
     ];
 }

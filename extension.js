@@ -9,6 +9,7 @@ import { setLoggerSettings, debug } from './logger.js';
 import { disposeViewActions } from './actions/viewActions.js';
 import { WorkspaceIndicatorController } from './workspaceIndicator.js';
 import { toggleSearchDialog, destroySearchDialog } from './searchDialog.js';
+import { initI18n } from './i18n.js';
 
 const FOCUS_DEBOUNCE_MS = 50;
 
@@ -26,6 +27,7 @@ export default class AppMenuExtension extends Extension {
 
     enable() {
         this._settings = this.getSettings('org.gnome.shell.extensions.appmenu');
+        initI18n(this);
         setLoggerSettings(this._settings);
         debug('Enabling extension.');
 

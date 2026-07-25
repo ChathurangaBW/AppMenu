@@ -44,14 +44,18 @@ const EXTENSION_ICONS_DIR = (() => {
     ]);
 })();
 
-// Static menus — computed once, never change
-const STATIC_MENUS = [
-    { label: "File",   children: buildFileMenu() },
-    { label: "Edit",   children: buildEditMenu() },
-    { label: "View",   children: buildViewMenu() },
-    { label: "Go",     children: buildGoMenu() },
-    { label: "Help",   children: buildHelpMenu() },
-];
+import { _ } from './i18n.js';
+
+// Lazy-built for i18n — rebuilt on every request so translations apply
+function _getStaticMenus() {
+    return [
+        { label: _("File"),   children: buildFileMenu() },
+        { label: _("Edit"),   children: buildEditMenu() },
+        { label: _("View"),   children: buildViewMenu() },
+        { label: _("Go"),     children: buildGoMenu() },
+        { label: _("Help"),   children: buildHelpMenu() },
+    ];
+}
 
 const TopLevelMenuButton = GObject.registerClass(
   class TopLevelMenuButton extends PanelMenu.Button {
@@ -332,7 +336,7 @@ export class MenuManager {
     }
 
     updateMenuForWindow(window, force = false) {
-        let appName = "Desktop";
+        let appName = _("Desktop");
         let isAppFocused = false;
         let detectedApp = null;
 
@@ -418,12 +422,12 @@ export class MenuManager {
 
         let topLevelMenus = realMenuData?.topLevelMenus?.length
             ? realMenuData.topLevelMenus.slice()
-            : STATIC_MENUS.slice(0, 4).concat([{ label: 'Window', children: windowChildren }], [STATIC_MENUS[4]]);
+            : _getStaticMenus().slice(0, 4).concat([{ label: _('Window'), children: windowChildren }], [_getStaticMenus()[4]]);
 
         if (realMenuData?.topLevelMenus?.length) {
             const hasWindowMenu = topLevelMenus.some(menu => menu.label.toLowerCase() === 'window');
             if (!hasWindowMenu)
-                topLevelMenus.push({ label: 'Window', children: windowChildren });
+                topLevelMenus.push({ label: _('Window'), children: windowChildren });
         }
 
         // Cache app menu data
