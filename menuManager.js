@@ -146,7 +146,9 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     rebuildMenu(children, openHandler = null) {
-        this.menu.removeAll();
+        try {
+            this.menu.removeAll();
+        } catch (_e) { /* menu may already be disposed during rapid rebuilds */ }
         this._setMenuOpenHandler(openHandler);
         this._buildSubMenu(children, this.menu);
     }
