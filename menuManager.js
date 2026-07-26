@@ -88,6 +88,7 @@ const TopLevelMenuButton = GObject.registerClass(
       this._menuOpenSignalId = 0;
       this._menuOpenHandler = null;
       this._subMenuSignalIds = [];
+      this._destroyed = false;
 
       this._setMenuOpenHandler(null);
       this._buildSubMenu(children, this.menu);
@@ -135,27 +136,53 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     _setMenuOpenHandler(handler) {
+        if (this._destroyed || !this.menu)
+            return;
         this._menuOpenHandler = handler;
-        if (this._menuOpenSignalId)
-            this.menu.disconnect(this._menuOpenSignalId);
+        if (this._menuOpenSignalId) {
+            try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
+            this._menuOpenSignalId = 0;
+        }
 
         this._menuOpenSignalId = this.menu.connect('open-state-changed', (_menu, isOpen) => {
-            if (isOpen)
+            if (isOpen && !this._destroyed)
                 this._menuOpenHandler?.();
         });
     }
 
-    rebuildMenu(children, openHandler = null) {
+    _disconnectMenuSignals() {
+        if (this._menuOpenSignalId && this.menu) {
+            try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
+            this._menuOpenSignalId = 0;
+        }
+
         this._subMenuSignalIds.forEach(({target, id}) => {
             try { target.disconnect(id); } catch (_e) {}
         });
         this._subMenuSignalIds = [];
+    }
+
+    rebuildMenu(children, openHandler = null) {
+        if (this._destroyed || !this.menu)
+            return;
+
+        this._disconnectMenuSignals();
 
         try {
             this.menu.removeAll();
         } catch (_e) { /* menu may already be disposed during rapid rebuilds */ }
         this._setMenuOpenHandler(openHandler);
         this._buildSubMenu(children, this.menu);
+    }
+
+    destroy() {
+        if (this._destroyed)
+            return;
+        this._destroyed = true;
+        this._menuOpenHandler = null;
+        this._disconnectMenuSignals();
+        try { this.menu?.close(true); } catch (_e) {}
+        super.destroy();
     }
 
     _buildSubMenu(menuItems, parentMenu) {
