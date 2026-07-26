@@ -146,6 +146,11 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     rebuildMenu(children, openHandler = null) {
+        this._subMenuSignalIds.forEach(({target, id}) => {
+            try { target.disconnect(id); } catch (_e) {}
+        });
+        this._subMenuSignalIds = [];
+
         try {
             this.menu.removeAll();
         } catch (_e) { /* menu may already be disposed during rapid rebuilds */ }
@@ -154,12 +159,6 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     _buildSubMenu(menuItems, parentMenu) {
-      // Disconnect previous build signals when menu is rebuilt
-      this._subMenuSignalIds.forEach(({target, id}) => {
-          try { target.disconnect(id); } catch (_e) {}
-      });
-      this._subMenuSignalIds = [];
-
       for (let idx = 0; idx < menuItems.length; idx++) {
         const item = menuItems[idx];
         if (item.type === "separator") {
@@ -448,7 +447,11 @@ export class MenuManager {
         while (this._buttons.length < newMenuData.length) {
             const idx = this._buttons.length;
             const data = newMenuData[idx];
-            const btn = new TopLevelMenuButton(data.label, data.children, detectedApp, this);
+            // Start empty; the update loop below builds each menu exactly once.
+            // Passing data.children here would build in the constructor and then
+            // immediately remove/rebuild, which causes disposed PopupMenuItem
+            // warnings during extension reloads.
+            const btn = new TopLevelMenuButton(data.label, [], detectedApp, this);
             Main.panel.addToStatusArea(`${this.uuid}-${idx}`, btn, idx + 1, 'left');
             this._buttons.push(btn);
         }

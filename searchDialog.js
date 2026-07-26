@@ -31,7 +31,7 @@ try {
 
 function _getCachedRecent() { return _recentCache; }
 
-import { _ } from '../i18n.js';
+import { _ } from './i18n.js';
 
 const SETTINGS_PANELS = [
     ['Wi-Fi', 'wifi'],
