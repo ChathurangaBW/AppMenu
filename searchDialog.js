@@ -73,6 +73,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._selectedIndex = -1;
         this._lastQuery = '';
         this._clutterTextSignalIds = [];
+        this._destroyed = false;
 
         this._entry = new St.Entry({
             style_class: 'appmenu-search-entry',
@@ -90,9 +91,14 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
         const clutterText = this._entry.clutter_text;
         this._clutterTextSignalIds.push(
-            clutterText.connect('text-changed', () => this._scheduleSearch()));
+            clutterText.connect('text-changed', () => {
+                if (!this._destroyed)
+                    this._scheduleSearch();
+            }));
         this._clutterTextSignalIds.push(
             clutterText.connect('key-press-event', (_actor, event) => {
+            if (this._destroyed)
+                return Clutter.EVENT_PROPAGATE;
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Escape) {
                 this.close();
@@ -116,40 +122,49 @@ class SearchDialog extends ModalDialog.ModalDialog {
     }
 
     destroy() {
+        if (this._destroyed)
+            return;
+        this._destroyed = true;
+
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
         }
+
         // Disconnect clutter text signals (EGO-L-003)
-        if (this._entry?.clutter_text && this._clutterTextSignalIds) {
-            const ct = this._entry.clutter_text;
-            this._clutterTextSignalIds.forEach(id => { try { ct.disconnect(id); } catch (_e) {} });
+        const entry = this._entry;
+        const signalIds = this._clutterTextSignalIds ?? [];
+        if (entry && signalIds.length > 0) {
+            try {
+                const ct = entry.clutter_text;
+                signalIds.forEach(id => {
+                    try { ct.disconnect(id); } catch (_e) {}
+                });
+            } catch (_e) {
+                // The actor may already be disposed during GNOME Shell reload.
+            }
         }
-        this._clutterTextSignalIds = null;
-        // Destroy result buttons (EGO-L-002)
-        if (this._resultButtons) {
-            this._resultButtons.forEach(b => { try { b.destroy(); } catch (_e) {} });
-            this._resultButtons = null;
-        }
-        // Destroy results box (EGO-L-002)
-        if (this._resultsBox) {
-            this._resultsBox.destroy();
-            this._resultsBox = null;
-        }
-        // Destroy entry (EGO-L-002)
-        if (this._entry) {
-            this._entry.destroy();
-            this._entry = null;
-        }
+
+        this._clutterTextSignalIds = [];
+        this._resultButtons = [];
+        this._resultsBox = null;
+        this._entry = null;
         // Release owned references (EGO-L-005)
         this._recentCache = null;
         this._appSystem = null;
         this._selectedIndex = -1;
         this._lastQuery = '';
-        super.destroy();
+        try {
+            super.destroy();
+        } catch (_e) {
+            // Ignore duplicate destroy during extension reload. Child actors are
+            // owned by ModalDialog and may already have been released by Shell.
+        }
     }
 
     open() {
+        if (this._destroyed)
+            return;
         super.open(global.get_current_time());
         this._entry.set_text('');
         this._renderResults(this._defaultResults());
@@ -157,6 +172,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
     }
 
     toggle() {
+        if (this._destroyed)
+            return;
         if (this.state === ModalDialog.State.OPENED || this.state === ModalDialog.State.OPENING)
             this.close(global.get_current_time());
         else
@@ -164,10 +181,14 @@ class SearchDialog extends ModalDialog.ModalDialog {
     }
 
     _scheduleSearch() {
+        if (this._destroyed || !this._entry)
+            return;
         if (this._timeoutId)
             GLib.source_remove(this._timeoutId);
         this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SEARCH_DEBOUNCE_MS, () => {
             this._timeoutId = 0;
+            if (this._destroyed || !this._entry)
+                return GLib.SOURCE_REMOVE;
             this._search(this._entry.get_text());
             return GLib.SOURCE_REMOVE;
         });
@@ -305,6 +326,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
     }
 
     _renderResults(results) {
+        if (this._destroyed || !this._resultsBox)
+            return;
         this._resultsBox.destroy_all_children();
         this._resultButtons = [];
         this._selectedIndex = -1;
@@ -329,6 +352,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
                 button.activate = () => this._activate(item);
                 button.connect('clicked', () => this._activate(item));
                 button.connect('notify::hover', () => {
+                    if (this._destroyed)
+                        return;
                     if (button.hover) {
                         const idx = this._resultButtons.indexOf(button);
                         if (idx >= 0)
@@ -386,14 +411,14 @@ class SearchDialog extends ModalDialog.ModalDialog {
 let _dialog = null;
 
 export function toggleSearchDialog() {
-    if (!_dialog)
+    if (!_dialog || _dialog._destroyed)
         _dialog = new SearchDialog();
     _dialog.toggle();
 }
 
 export function destroySearchDialog() {
-    if (_dialog) {
-        _dialog.destroy();
-        _dialog = null;
-    }
+    const dialog = _dialog;
+    _dialog = null;
+    if (dialog)
+        dialog.destroy();
 }
