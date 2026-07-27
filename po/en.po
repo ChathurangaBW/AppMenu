@@ -260,3 +260,177 @@ msgstr ""
 
 msgid "View"
 msgstr ""
+
+msgid "AppMenu"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Application unavailable"
+msgstr ""
+
+msgid "Choose the panel icon and how AppMenu appears in the top bar."
+msgstr ""
+
+msgid "Choose which side of the panel shows workspace navigation."
+msgstr ""
+
+msgid "Clear Menu"
+msgstr ""
+
+msgid "Configure optional panel items such as user switching and workspace navigation."
+msgstr ""
+
+msgid "Control when menus update and whether AppMenu should use real exported app menus."
+msgstr ""
+
+msgid "Copy Troubleshooting Info"
+msgstr ""
+
+msgid "Could not copy troubleshooting info. Enable debug logging and check the journal."
+msgstr ""
+
+msgid "Current Status"
+msgstr ""
+
+msgid "Debug Logging"
+msgstr ""
+
+msgid "Diagnostics"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Enable troubleshooting logs only when you need to collect debug information."
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Extension: Active"
+msgstr ""
+
+msgid "Fallback menus"
+msgstr ""
+
+msgid "Focused app: %s"
+msgstr ""
+
+msgid "Icon"
+msgstr ""
+
+msgid "Icon Size"
+msgstr ""
+
+msgid "Item unavailable"
+msgstr ""
+
+msgid "Left side"
+msgstr ""
+
+msgid "Lock to focused app"
+msgstr ""
+
+msgid "Login Window..."
+msgstr ""
+
+msgid "Menu Behavior"
+msgstr ""
+
+msgid "Menu source: %s"
+msgstr ""
+
+msgid "More"
+msgstr ""
+
+msgid "No eligible user accounts found"
+msgstr ""
+
+msgid "No recent items"
+msgstr ""
+
+msgid "No results"
+msgstr ""
+
+msgid "Only update menu when switching windows."
+msgstr ""
+
+msgid "Open AppMenu Preferences"
+msgstr ""
+
+msgid "Open GNOME Settings"
+msgstr ""
+
+msgid "Panel Extras"
+msgstr ""
+
+msgid "Panel icon size in pixels (12–36)."
+msgstr ""
+
+msgid "Read exported D-Bus menus when apps provide them. Apps without exported menus keep the safe fallback menus."
+msgstr ""
+
+msgid "Real exported menus"
+msgstr ""
+
+msgid "Real menus: %s"
+msgstr ""
+
+msgid "Recent Files"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Reset AppMenu Settings"
+msgstr ""
+
+msgid "Restore AppMenu preferences to their packaged defaults."
+msgstr ""
+
+msgid "Right side"
+msgstr ""
+
+msgid "Search apps, recent files, and settings"
+msgstr ""
+
+msgid "Show OS icon"
+msgstr ""
+
+msgid "Show User Switcher"
+msgstr ""
+
+msgid "Show Workspace Indicator"
+msgstr ""
+
+msgid "Show the logo icon in the top panel."
+msgstr ""
+
+msgid "Show user switcher in the right side of the panel."
+msgstr ""
+
+msgid "Show workspace navigation dots in the top panel."
+msgstr ""
+
+msgid "Troubleshooting info copied to clipboard."
+msgstr ""
+
+msgid "Untitled"
+msgstr ""
+
+msgid "Use real application menus"
+msgstr ""
+
+msgid "Users & Groups Preferences..."
+msgstr ""
+
+msgid "Window"
+msgstr ""
+
+msgid "Workspace Indicator Position"
+msgstr ""
+
+msgid "Write diagnostic AppMenu logs to the GNOME Shell journal."
+msgstr ""

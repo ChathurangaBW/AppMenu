@@ -29,8 +29,8 @@ def extract():
     for path in find_js_files():
         with open(path, 'r') as f:
             content = f.read()
-        for m in re.finditer(r'\b_\("((?:[^"\\]|\\.)*?)(?<!\\)"\)', content):
-            s = m.group(1)
+        for m in re.finditer(r"\b_\(\s*(['\"])((?:\\.|(?!\1).)*?)\1\s*\)", content):
+            s = m.group(2)
             s = s.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
             if s.strip():
                 strings.add(s)
