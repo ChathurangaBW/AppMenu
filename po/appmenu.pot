@@ -26,6 +26,9 @@ msgstr ""
 msgid "AppMenu Settings"
 msgstr ""
 
+msgid "AppMenu Status"
+msgstr ""
+
 msgid "Applications"
 msgstr ""
 

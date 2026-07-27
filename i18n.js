@@ -9,6 +9,7 @@ import GLib from 'gi://GLib';
 
 const DOMAIN = 'appmenu';
 let _initialized = false;
+let _translate = str => GLib.dgettext(DOMAIN, str);
 
 /**
  * Bind the gettext domain. Safe to call multiple times (idempotent).
@@ -16,14 +17,14 @@ let _initialized = false;
  */
 export function initI18n(extensionObject) {
     if (_initialized) return;
+
     try {
-        const localeDir = extensionObject.dir.get_child('locale').get_path();
-        GLib.bindtextdomain(DOMAIN, localeDir);
-        GLib.bind_textdomain_codeset(DOMAIN, 'UTF-8');
-        GLib.textdomain(DOMAIN);
-        _initialized = true;
+        if (extensionObject && typeof extensionObject.gettext === 'function')
+            _translate = extensionObject.gettext.bind(extensionObject);
     } catch (e) {
-        log(`AppMenu i18n: ${e}`);
+        log(`AppMenu i18n: falling back to GLib.dgettext: ${e}`);
+    } finally {
+        _initialized = true;
     }
 }
 
@@ -33,5 +34,9 @@ export function initI18n(extensionObject) {
  * @returns {string}
  */
 export function _(str) {
-    return GLib.dgettext(DOMAIN, str);
+    try {
+        return _translate(str);
+    } catch (e) {
+        return str;
+    }
 }

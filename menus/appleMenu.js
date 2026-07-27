@@ -4,9 +4,15 @@
  */
 import { _ } from '../i18n.js';
 
-export function buildAppleMenu() {
-    return [
+export function buildAppleMenu(statusChildren = []) {
+    const items = [
         { label: _("About This System"), action: "about-this-mac" },
+        ...(statusChildren.length > 0
+            ? [
+                { type: "submenu", label: _("AppMenu Status"), children: statusChildren },
+                { type: "separator" },
+            ]
+            : []),
         { type: "separator" },
         { label: _("System Settings"), action: "system-settings" },
         { label: _("Software"), action: "app-store" },
@@ -23,4 +29,6 @@ export function buildAppleMenu() {
         { label: _("Lock Screen"), action: "lock-screen" },
         { label: _("Log Out..."), action: "log-out" },
     ];
+
+    return items;
 }

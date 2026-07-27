@@ -11,5 +11,6 @@
     "50"
   ],
   "url": "https://github.com/ChathurangaBW/AppMenu",
+  "gettext-domain": "appmenu",
   "version": 7
 }

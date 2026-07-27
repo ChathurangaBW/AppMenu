@@ -4,6 +4,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Shell from 'gi://Shell';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
@@ -185,7 +186,7 @@ const TopLevelMenuButton = GObject.registerClass(
         super.destroy();
     }
 
-    _buildSubMenu(menuItems, parentMenu) {
+        _buildSubMenu(menuItems, parentMenu) {
       for (let idx = 0; idx < menuItems.length; idx++) {
         const item = menuItems[idx];
         if (item.type === "separator") {
@@ -232,19 +233,7 @@ const TopLevelMenuButton = GObject.registerClass(
           parentMenu.addMenuItem(menuItem);
         }
       }
-    }
-
-    destroy() {
-        if (this.menu && this._menuOpenSignalId) {
-            try { this.menu.disconnect(this._menuOpenSignalId); } catch (_e) {}
-            this._menuOpenSignalId = 0;
         }
-        this._subMenuSignalIds.forEach(({target, id}) => {
-            try { target.disconnect(id); } catch (_e) {}
-        });
-        this._subMenuSignalIds = [];
-        super.destroy();
-    }
   }
 );
 
@@ -279,11 +268,12 @@ export class MenuManager {
         this._windowTracker = Shell.WindowTracker.get_default();
         this._appSystem = Shell.AppSystem.get_default();
 
-        // App menu cache — avoid rebuild when same app stays focused
-        this._lastAppId = null;
-        this._lastAppMenuData = null;
-        this._lastWindowId = null;
-        this._lastRealMenuKey = null;
+            // App menu cache — avoid rebuild when same app stays focused
+            this._lastAppId = null;
+            this._lastAppMenuData = null;
+            this._lastWindowId = null;
+            this._lastRealMenuKey = null;
+            this._lastDiagnostics = null;
 
         // Listen for settings changes
         if (this._settings) {
@@ -351,7 +341,7 @@ export class MenuManager {
         return this._cachedBlacklistLower;
     }
 
-    getVirtualDevice() {
+        getVirtualDevice() {
         if (!this._virtualDevice) {
             try {
                 const seat = Clutter.get_default_backend().get_default_seat();
@@ -361,9 +351,69 @@ export class MenuManager {
             }
         }
         return this._virtualDevice;
-    }
+        }
 
-    updateMenuForWindow(window, force = false) {
+        _settingBool(key, fallback = false) {
+            try {
+                return this._settings?.get_boolean(key) ?? fallback;
+            } catch (_e) {
+                return fallback;
+            }
+        }
+
+        _buildTroubleshootingInfo() {
+            const info = this._lastDiagnostics ?? {};
+            const lines = [
+                'AppMenu troubleshooting info',
+                `UUID: ${this.uuid}`,
+                `Extension metadata version: 7`,
+                `GNOME Shell: ${Config.PACKAGE_VERSION ?? 'unknown'}`,
+                `Session: ${GLib.getenv('XDG_SESSION_TYPE') || 'unknown'}`,
+                `Focused app: ${info.appName ?? _('Desktop')}`,
+                `Application ID: ${info.appId ?? 'none'}`,
+                `Window class: ${info.wmClass || 'none'}`,
+                `Window title present: ${info.hasWindowTitle ? 'yes' : 'no'}`,
+                `Real menus setting: ${this._settingBool('use-real-menus', true) ? 'enabled' : 'disabled'}`,
+                `Menu source: ${info.menuSource ?? 'fallback'}`,
+                `Debug logging: ${this._settingBool('debug-logging', false) ? 'enabled' : 'disabled'}`,
+                `User switcher: ${this._settingBool('show-user-switcher', true) ? 'enabled' : 'disabled'}`,
+                `Workspace indicator: ${this._settingBool('show-workspace-indicator', false) ? 'enabled' : 'disabled'}`,
+                'Install note: on Wayland, log out and log back in after installing or upgrading.',
+            ];
+            return lines.join('\n');
+        }
+
+        _copyTroubleshootingInfo() {
+            const text = this._buildTroubleshootingInfo();
+            try {
+                St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
+                Main.notify(_('AppMenu'), _('Troubleshooting info copied to clipboard.'));
+                Logger.debug('Troubleshooting info copied to clipboard.');
+            } catch (e) {
+                Logger.error(`Failed to copy troubleshooting info: ${e}`);
+                Main.notify(_('AppMenu'), _('Could not copy troubleshooting info. Enable debug logging and check the journal.'));
+            }
+        }
+
+        _buildStatusMenuChildren() {
+            const info = this._lastDiagnostics ?? {};
+            const menuSource = info.menuSource ?? _('Fallback menus');
+            const focusedApp = info.appName ?? _('Desktop');
+            const realMenusEnabled = this._settingBool('use-real-menus', true);
+
+            return [
+                { type: 'section-header', label: _('Current Status') },
+                { label: _('Extension: Active'), sensitive: false },
+                { label: _('Focused app: %s').replace('%s', focusedApp), sensitive: false },
+                { label: _('Menu source: %s').replace('%s', menuSource), sensitive: false },
+                { label: _('Real menus: %s').replace('%s', realMenusEnabled ? _('Enabled') : _('Disabled')), sensitive: false },
+                { type: 'separator' },
+                { label: _('Copy Troubleshooting Info'), activate: () => this._copyTroubleshootingInfo() },
+                { label: _('Open AppMenu Preferences'), action: 'open-settings-ext' },
+            ];
+        }
+
+        updateMenuForWindow(window, force = false) {
         let appName = _("Desktop");
         let isAppFocused = false;
         let detectedApp = null;
@@ -423,8 +473,18 @@ export class MenuManager {
         const currentAppId = detectedApp ? detectedApp.get_id() : null;
         const currentWindowId = window?.get_id?.() ?? null;
         const wmClass = window?.get_wm_class?.() ?? '';
-        const realMenuData = this._realMenuManager.updateForWindow(window, appName, detectedApp, wmClass);
-        const realMenuKey = realMenuData?.registrationKey ?? null;
+            const realMenuData = this._realMenuManager.updateForWindow(window, appName, detectedApp, wmClass);
+            const realMenuKey = realMenuData?.registrationKey ?? null;
+            const menuSource = realMenuData?.topLevelMenus?.length
+                ? _('Real exported menus')
+                : _('Fallback menus');
+            this._lastDiagnostics = {
+                appName,
+                appId: detectedApp?.get_id?.() ?? null,
+                wmClass,
+                hasWindowTitle: Boolean(window?.get_title?.()),
+                menuSource,
+            };
 
         // Skip rebuild if the effective menu state is unchanged
         if (!force
@@ -446,7 +506,7 @@ export class MenuManager {
             : fallbackAppChildren;
 
         const windowChildren = buildWindowMenu(window, detectedApp);
-        const appleChildren = buildAppleMenu();
+            const appleChildren = buildAppleMenu(this._buildStatusMenuChildren());
 
         let topLevelMenus = realMenuData?.topLevelMenus?.length
             ? realMenuData.topLevelMenus.slice()

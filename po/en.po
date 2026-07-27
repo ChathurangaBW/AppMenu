@@ -24,6 +24,9 @@ msgstr ""
 msgid "About This System"
 msgstr ""
 
+msgid "AppMenu Status"
+msgstr ""
+
 msgid "AppMenu Settings"
 msgstr ""
 
