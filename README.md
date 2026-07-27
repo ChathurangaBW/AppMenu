@@ -27,6 +27,7 @@ AppMenu brings a macOS-style menu bar to the GNOME top panel without external da
 ## Highlights
 
 - Apple menu with system actions, recent items, and Search
+- AppMenu Status submenu with copyable troubleshooting information
 - Dynamic app menu based on the focused window
 - Optional real D-Bus app menu import for supported apps
 - File, Edit, View, Go, Window, and Help menus
@@ -43,6 +44,7 @@ AppMenu brings a macOS-style menu bar to the GNOME top panel without external da
 ### Apple Menu
 
 - About This Computer
+- AppMenu Status with current app, menu source, and copyable troubleshooting info
 - System Settings
 - App Store
 - Recent Items
@@ -73,6 +75,8 @@ Search sources:
 - Recent files
 - GNOME Settings panels
 
+Results are grouped by type and show icons so users can tell apps, recent files, and settings apart quickly.
+
 ### Workspace Controls
 
 The Window menu includes:
@@ -82,7 +86,7 @@ The Window menu includes:
 - Move Window Left
 - Move Window Right
 
-Enable **Show Workspace Indicator** in preferences to show workspace navigation dots in the panel.
+Enable **Show Workspace Indicator** in preferences to show workspace navigation dots in the panel. Use **Workspace Indicator Position** to place the dots on the left or right side of the top panel.
 
 ## AppMenu vs Other GNOME Menu Extensions
 
@@ -158,7 +162,45 @@ Available settings:
 | **Use real application menus** | Use dbusmenu or native GTK action exports when supported, with automatic fallback |
 | **Show User Switcher** | Show avatar-based fast user switching |
 | **Show Workspace Indicator** | Show workspace navigation dots |
+| **Workspace Indicator Position** | Choose left or right panel placement for workspace dots |
 | **Debug Logging** | Enable diagnostic GNOME Shell journal logs |
+| **Reset AppMenu Settings** | Restore AppMenu preferences to packaged defaults |
+
+Preferences are grouped into Appearance, Menu Behavior, Panel Extras, and Diagnostics sections.
+
+## Troubleshooting
+
+### AppMenu appears to do nothing
+
+1. Open the Apple menu in the top panel.
+2. Open **AppMenu Status**.
+3. Choose **Copy Troubleshooting Info**.
+4. Paste that information into the GitHub issue, along with your GNOME version and whether you are on Wayland or X11.
+
+The status submenu reports the focused app, app ID, window class, real-menu setting, menu source, debug logging state, user switcher state, and workspace indicator state.
+
+### Real menus vs fallback menus
+
+AppMenu tries real exported menus first when **Use real application menus** is enabled. Some modern apps, sandboxed apps, or Wayland sessions do not expose full menu trees. In those cases AppMenu falls back to stable cross-app actions so the menu bar remains useful instead of disappearing.
+
+### After installing or upgrading
+
+GNOME Shell can keep old extension modules cached in the current Wayland session. If AppMenu still behaves like an older version after installing or upgrading:
+
+- **Wayland:** log out and log back in.
+- **X11:** press `Alt+F2`, type `r`, then press Enter.
+
+This is a GNOME Shell session cache behavior. The installed files can be correct while the already-running shell still has old module code loaded.
+
+### Collecting logs
+
+Enable **Debug Logging** in preferences only while troubleshooting. Then collect logs with:
+
+```bash
+journalctl --user -b | grep -i AppMenu
+```
+
+Disable debug logging again after collecting the information.
 
 ## Development
 
