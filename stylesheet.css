@@ -170,11 +170,40 @@
 }
 
 .appmenu-search-result:hover,
-.appmenu-search-result:focus {
+.appmenu-search-result:focus,
+.appmenu-search-result.selected {
     background-color: rgba(128, 128, 128, 0.18);
 }
 
+.appmenu-search-result-content {
+    spacing: 10px;
+}
+
+.appmenu-search-result-icon {
+    icon-size: 22px;
+    color: -st-dim-text;
+}
+
+.appmenu-search-result-text {
+    spacing: 2px;
+}
+
 .appmenu-search-result-title {
+    font-weight: bold;
+}
+
+.appmenu-search-empty-state {
+    padding: 18px 12px;
+    spacing: 8px;
+    text-align: center;
+}
+
+.appmenu-search-empty-icon {
+    icon-size: 32px;
+    color: -st-dim-text;
+}
+
+.appmenu-search-empty-title {
     font-weight: bold;
 }
 

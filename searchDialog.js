@@ -11,6 +11,12 @@ const SEARCH_DEBOUNCE_MS = 200;
 const MAX_RESULTS = 8;
 const MAX_RESULTS_PER_SECTION = 4;
 
+const RESULT_TYPE_ICONS = {
+    app: 'application-x-executable-symbolic',
+    file: 'text-x-generic-symbolic',
+    settings: 'preferences-system-symbolic',
+};
+
 // Pre-populated at import time — not called from shell code (EGO-X-004 compliant)
 const _recentCache = [];
 try {
@@ -65,6 +71,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._recentCache = null;
         this._resultButtons = [];
         this._selectedIndex = -1;
+        this._lastQuery = '';
         this._clutterTextSignalIds = [];
 
         this._entry = new St.Entry({
@@ -138,6 +145,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._recentCache = null;
         this._appSystem = null;
         this._selectedIndex = -1;
+        this._lastQuery = '';
         super.destroy();
     }
 
@@ -199,6 +207,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
 
     _search(query) {
         const q = query.trim().toLowerCase();
+        this._lastQuery = query.trim();
         if (!q) {
             this._renderResults(this._defaultResults());
             return;
@@ -250,12 +259,49 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._selectedIndex = index;
         this._resultButtons.forEach((button, idx) => {
             if (idx === index) {
+                button.add_style_class_name('selected');
                 button.add_style_pseudo_class('focus');
                 button.grab_key_focus();
             } else {
+                button.remove_style_class_name('selected');
                 button.remove_style_pseudo_class('focus');
             }
         });
+    }
+
+    _iconForItem(item) {
+        if (item.type === 'app') {
+            const appIcon = item.app?.get_icon?.();
+            if (appIcon)
+                return new St.Icon({gicon: appIcon, style_class: 'appmenu-search-result-icon'});
+        }
+
+        return new St.Icon({
+            icon_name: RESULT_TYPE_ICONS[item.type] ?? 'system-search-symbolic',
+            style_class: 'appmenu-search-result-icon',
+        });
+    }
+
+    _emptyState() {
+        const box = new St.BoxLayout({
+            vertical: true,
+            style_class: 'appmenu-search-empty-state',
+        });
+        box.add_child(new St.Icon({
+            icon_name: 'system-search-symbolic',
+            style_class: 'appmenu-search-empty-icon',
+        }));
+        box.add_child(new St.Label({
+            text: _('No results found'),
+            style_class: 'appmenu-search-empty-title',
+        }));
+        box.add_child(new St.Label({
+            text: this._lastQuery
+                ? _('Try a different app, setting, or recent file name.')
+                : _('Start typing to search apps, settings, and recent files.'),
+            style_class: 'appmenu-search-empty',
+        }));
+        return box;
     }
 
     _renderResults(results) {
@@ -263,10 +309,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._resultButtons = [];
         this._selectedIndex = -1;
         if (results.length === 0) {
-            this._resultsBox.add_child(new St.Label({
-                text: _('No results'),
-                style_class: 'appmenu-search-empty',
-            }));
+            this._resultsBox.add_child(this._emptyState());
             return;
         }
 
@@ -293,17 +336,27 @@ class SearchDialog extends ModalDialog.ModalDialog {
                     }
                 });
 
-                const box = new St.BoxLayout({ vertical: true });
-                box.add_child(new St.Label({
+                const box = new St.BoxLayout({
+                    vertical: false,
+                    style_class: 'appmenu-search-result-content',
+                });
+                box.add_child(this._iconForItem(item));
+
+                const textBox = new St.BoxLayout({
+                    vertical: true,
+                    style_class: 'appmenu-search-result-text',
+                });
+                textBox.add_child(new St.Label({
                     text: item.title,
                     style_class: 'appmenu-search-result-title',
                     x_align: Clutter.ActorAlign.START,
                 }));
-                box.add_child(new St.Label({
+                textBox.add_child(new St.Label({
                     text: item.subtitle || item.type,
                     style_class: 'appmenu-search-result-subtitle',
                     x_align: Clutter.ActorAlign.START,
                 }));
+                box.add_child(textBox);
                 button.add_child(box);
                 this._resultButtons.push(button);
                 this._resultsBox.add_child(button);

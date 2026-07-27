@@ -351,8 +351,6 @@ msgstr ""
 msgid "No recent items"
 msgstr ""
 
-msgid "No results"
-msgstr ""
 
 msgid "Only update menu when switching windows."
 msgstr ""
@@ -433,4 +431,13 @@ msgid "Workspace Indicator Position"
 msgstr ""
 
 msgid "Write diagnostic AppMenu logs to the GNOME Shell journal."
+msgstr ""
+
+msgid "No results found"
+msgstr ""
+
+msgid "Start typing to search apps, settings, and recent files."
+msgstr ""
+
+msgid "Try a different app, setting, or recent file name."
 msgstr ""

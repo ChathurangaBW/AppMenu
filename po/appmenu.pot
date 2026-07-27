@@ -248,7 +248,7 @@ msgstr ""
 msgid "No recent items"
 msgstr ""
 
-msgid "No results"
+msgid "No results found"
 msgstr ""
 
 msgid "Only update menu when switching windows."
@@ -392,6 +392,9 @@ msgstr ""
 msgid "Sort by Size"
 msgstr ""
 
+msgid "Start typing to search apps, settings, and recent files."
+msgstr ""
+
 msgid "System Settings"
 msgstr ""
 
@@ -405,6 +408,9 @@ msgid "Toggle Path Bar"
 msgstr ""
 
 msgid "Troubleshooting info copied to clipboard."
+msgstr ""
+
+msgid "Try a different app, setting, or recent file name."
 msgstr ""
 
 msgid "Undo"
