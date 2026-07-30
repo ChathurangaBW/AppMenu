@@ -1,8 +1,45 @@
 #!/bin/bash
 
+set -euo pipefail
+
 EXTENSION_UUID="appmenu@ChathurangaBW.github.io"
-EXTENSION_DIR="$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
+PREFIX="${PREFIX:-}"
+SYSTEM_INSTALL=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --system)
+            SYSTEM_INSTALL=1
+            ;;
+        --prefix=*)
+            PREFIX="${arg#--prefix=}"
+            SYSTEM_INSTALL=1
+            ;;
+        -h|--help)
+            cat <<EOF
+Usage: ./install.sh [--system] [--prefix=/usr/local]
+
+Default installs to ~/.local/share/gnome-shell/extensions/$EXTENSION_UUID.
+Use --system to install to /usr/local/share/gnome-shell/extensions/$EXTENSION_UUID.
+Use --prefix=/usr to install to /usr/share/gnome-shell/extensions/$EXTENSION_UUID.
+Set DESTDIR for packaging or scratch validation.
+EOF
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [[ "$SYSTEM_INSTALL" -eq 1 ]]; then
+    PREFIX="${PREFIX:-/usr/local}"
+    EXTENSION_DIR="${DESTDIR:-}${PREFIX%/}/share/gnome-shell/extensions/$EXTENSION_UUID"
+else
+    EXTENSION_DIR="${DESTDIR:-}$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
+fi
 
 echo "--------------------------------------------------"
 echo "Installing AppMenu..."
@@ -13,26 +50,15 @@ rm -rf "$EXTENSION_DIR"
 mkdir -p "$EXTENSION_DIR"
 
 echo "Copying extension files..."
-cp -rv "$SOURCE_DIR/metadata.json" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/extension.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/menuManager.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/realMenuManager.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/recentItemsSubmenu.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/documentTooltip.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/userSwitcher.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/workspaceIndicator.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/searchDialog.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/logger.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/i18n.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/prefs.js" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/stylesheet.css" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/actions" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/menus" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/icons" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/icons.json" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/locale" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/uninstall.sh" "$EXTENSION_DIR/"
-cp -rv "$SOURCE_DIR/schemas" "$EXTENSION_DIR/"
+for item in \
+    metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
+    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js stylesheet.css \
+    actions menus icons icons.json locale uninstall.sh schemas; do
+    cp -rv "$SOURCE_DIR/$item" "$EXTENSION_DIR/"
+done
+
+test -f "$EXTENSION_DIR/i18n.js"
+test -f "$EXTENSION_DIR/locale/en/LC_MESSAGES/appmenu.mo"
 
 echo "Compiling GSettings schemas..."
 glib-compile-schemas "$EXTENSION_DIR/schemas/"

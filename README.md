@@ -6,7 +6,7 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.3-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.3.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -116,7 +116,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.3.zip`
+- `AppMenu-e.g.o-upload-v5.3.1.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -124,12 +124,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.3.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.3.1.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.3-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.3-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.3_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.3.zip`: source snapshot
+- `AppMenu-v5.3.1-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.3.1-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.3.1_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.3.1.zip`: source snapshot
 
 ### From Source
 
@@ -138,6 +138,14 @@ git clone https://github.com/ChathurangaBW/AppMenu.git
 cd AppMenu
 bash install.sh
 ```
+
+For a system-wide install, such as `/usr/local/share/gnome-shell/extensions`, run:
+
+```bash
+sudo bash install.sh --system --prefix=/usr/local
+```
+
+To replace a system package location, use `--prefix=/usr` instead.
 
 Then restart GNOME Shell:
 
@@ -191,6 +199,23 @@ GNOME Shell can keep old extension modules cached in the current Wayland session
 - **X11:** press `Alt+F2`, type `r`, then press Enter.
 
 This is a GNOME Shell session cache behavior. The installed files can be correct while the already-running shell still has old module code loaded.
+
+### `i18n.js` missing from `/usr/local/share`
+
+If GNOME Shell reports an error like `Unable to load file ... /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io/i18n.js`, a stale system-wide install is shadowing the updated user install. Remove or replace that system copy, then log out and back in:
+
+```bash
+sudo rm -rf /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io
+sudo rm -rf /usr/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io
+bash install.sh
+```
+
+If you intentionally want a system-wide install, use:
+
+```bash
+sudo bash install.sh --system --prefix=/usr/local
+test -f /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io/i18n.js
+```
 
 ### Collecting logs
 
