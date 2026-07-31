@@ -9,6 +9,7 @@ import { setLoggerSettings, debug } from './logger.js';
 import { disposeViewActions } from './actions/viewActions.js';
 import { WorkspaceIndicatorController } from './workspaceIndicator.js';
 import { toggleSearchDialog, destroySearchDialog } from './searchDialog.js';
+import { SystemMenuButton } from './systemMenuButton.js';
 import { initI18n } from './i18n.js';
 
 const FOCUS_DEBOUNCE_MS = 50;
@@ -23,6 +24,8 @@ export default class AppMenuExtension extends Extension {
         this._userSwitcherController = null;
         this._workspaceIndicatorController = null;
         this._searchShortcutInstalled = false;
+        this._systemMenuButton = null;
+        this._overviewHidden = false;
     }
 
     enable() {
@@ -43,9 +46,44 @@ export default class AppMenuExtension extends Extension {
             this._scheduleMenuUpdate();
         }, this);
 
+        this._syncSystemMenu();
+        this._syncOverviewButton();
+
+        this._settingsChangedId = this._settings.connect('changed', (_s, key) => {
+            if (key === 'show-os-icon') {
+                this._syncSystemMenu();
+            } else if (key === 'hide-overview-button') {
+                this._syncOverviewButton();
+            }
+        });
+
         this._userSwitcherController = new UserSwitcherController(this, this._settings);
         this._workspaceIndicatorController = new WorkspaceIndicatorController(this._settings);
         this._addSearchKeybinding();
+    }
+
+    _syncSystemMenu() {
+        let shouldShow = this._settings.get_boolean('show-os-icon');
+        if (shouldShow && !this._systemMenuButton) {
+            this._systemMenuButton = new SystemMenuButton(this._settings, this.path);
+            Main.panel.addToStatusArea('appmenu-system', this._systemMenuButton, 0, 'left');
+        } else if (!shouldShow && this._systemMenuButton) {
+            this._systemMenuButton.destroy();
+            this._systemMenuButton = null;
+        }
+    }
+
+    _syncOverviewButton() {
+        let activities = Main.panel.statusArea['activities'];
+        if (!activities) return;
+        let shouldHide = this._settings.get_boolean('hide-overview-button');
+        if (shouldHide && !this._overviewHidden) {
+            activities.hide();
+            this._overviewHidden = true;
+        } else if (!shouldHide && this._overviewHidden) {
+            activities.show();
+            this._overviewHidden = false;
+        }
     }
 
     _addSearchKeybinding() {
@@ -133,6 +171,22 @@ export default class AppMenuExtension extends Extension {
         if (this._workspaceIndicatorController) {
             this._workspaceIndicatorController.destroy();
             this._workspaceIndicatorController = null;
+        }
+
+        if (this._systemMenuButton) {
+            this._systemMenuButton.destroy();
+            this._systemMenuButton = null;
+        }
+
+        if (this._settings && this._settingsChangedId) {
+            this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = null;
+        }
+
+        if (this._overviewHidden) {
+            let activities = Main.panel.statusArea['activities'];
+            if (activities) activities.show();
+            this._overviewHidden = false;
         }
 
         disposeViewActions();

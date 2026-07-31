@@ -101,6 +101,23 @@ const TopLevelMenuButton = GObject.registerClass(
             this.menu.close(true);
         }
 
+        // --- v5.4: custom menu actions ---
+        if (action.startsWith('spawn-command:')) {
+            let cmd = action.slice('spawn-command:'.length);
+            try {
+                let [, argv] = GLib.shell_parse_argv(cmd);
+                GLib.spawn_async(null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null);
+            } catch (e) {
+                Logger.error(`Failed to spawn custom command '${cmd}': ${e}`);
+            }
+            return;
+        }
+        if (action.startsWith('custom-shortcut:')) {
+            let accel = action.slice('custom-shortcut:'.length);
+            this._sendAccelerator(accel);
+            return;
+        }
+
         // Give a brief moment for focus to return to Nautilus
         const timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
             if (this._menuManagerInstance)
@@ -234,6 +251,42 @@ const TopLevelMenuButton = GObject.registerClass(
         }
       }
         }
+
+    // v5.4: send custom keyboard shortcuts from user-defined menus
+    _sendAccelerator(accel) {
+        try {
+            let [success, keyval, mods] = Clutter.accelerator_parse(accel);
+            if (!success) {
+                Logger.error(`Could not parse shortcut '${accel}'`);
+                return;
+            }
+            let seat = Clutter.get_default_backend().get_default_seat();
+            let vd = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+            if (!vd) return;
+
+            let modKeys = [];
+            if (mods & Clutter.ModifierType.CONTROL_MASK) modKeys.push(Clutter.KEY_Control_L);
+            if (mods & Clutter.ModifierType.SHIFT_MASK) modKeys.push(Clutter.KEY_Shift_L);
+            if (mods & Clutter.ModifierType.MOD1_MASK) modKeys.push(Clutter.KEY_Alt_L);
+            if (mods & Clutter.ModifierType.SUPER_MASK) modKeys.push(Clutter.KEY_Super_L);
+
+            let t = GLib.get_monotonic_time();
+            modKeys.forEach(k => {
+                vd.notify_keyval(t, k, Clutter.KeyState.PRESSED);
+                t += 5;
+            });
+            vd.notify_keyval(t, keyval, Clutter.KeyState.PRESSED);
+            t += 5;
+            vd.notify_keyval(t, keyval, Clutter.KeyState.RELEASED);
+            t += 5;
+            modKeys.slice().reverse().forEach(k => {
+                vd.notify_keyval(t, k, Clutter.KeyState.RELEASED);
+                t += 5;
+            });
+        } catch (e) {
+            Logger.error(`Failed to send accelerator '${accel}': ${e}`);
+        }
+    }
   }
 );
 
@@ -501,9 +554,80 @@ export class MenuManager {
         const fallbackAppChildren = isAppFocused
             ? buildAppMenu(appName, detectedApp, window)
             : buildFallbackAppMenu();
+
+        // --- v5.4: window list + Quit / App Details ---
+        let augmentedAppChildren = fallbackAppChildren.slice();
+        if (isAppFocused && detectedApp) {
+            let openWindows = detectedApp.get_windows();
+            if (openWindows && openWindows.length > 1) {
+                let winItems = [];
+                winItems.push({ type: 'section-header', label: _('Open Windows') });
+                openWindows.forEach(w => {
+                    let t = w.get_title() || appName;
+                    winItems.push({
+                        label: w === window ? `✓ ${t}` : t,
+                        activate: () => {
+                            try { w.activate(global.get_current_time()); } catch (e) {}
+                        }
+                    });
+                });
+                winItems.push({ type: 'separator' });
+                augmentedAppChildren = [...winItems, ...augmentedAppChildren];
+            }
+
+            // App Details and Quit at the bottom
+            augmentedAppChildren.push({ type: 'separator' });
+            augmentedAppChildren.push({
+                label: _('App Details'),
+                activate: () => {
+                    try {
+                        GLib.spawn_async(null,
+                            ['gnome-software', `--details=${detectedApp.get_id()}`],
+                            null, GLib.SpawnFlags.SEARCH_PATH, null);
+                    } catch (e) {}
+                }
+            });
+            augmentedAppChildren.push({
+                label: _('Quit %s').replace('%s', appName),
+                activate: () => {
+                    try {
+                        let wins = detectedApp.get_windows();
+                        if (wins && wins.length > 0)
+                            wins.forEach(w => w.delete(global.get_current_time()));
+                    } catch (e) {}
+                }
+            });
+        }
+
         const appChildren = realMenuData?.appMenuChildren?.length
             ? realMenuData.appMenuChildren
-            : fallbackAppChildren;
+            : augmentedAppChildren;
+
+        // --- Custom app menus ---
+        let customMenus = [];
+        try {
+            let raw = this._settings.get_string('custom-app-menus') || '[]';
+            let sections = JSON.parse(raw);
+            if (Array.isArray(sections)) {
+                sections = sections.filter(s => s && s.enabled !== false);
+                sections.forEach(section => {
+                    let items = Array.isArray(section.items) ? section.items : [];
+                    let children = items.filter(e => e && e.value).map(e => ({
+                        label: e.label || _('(untitled)'),
+                        action: e.kind === 'shortcut'
+                            ? `custom-shortcut:${e.value}`
+                            : `spawn-command:${e.value}`,
+                    }));
+                    if (children.length === 0)
+                        children.push({ label: _('No items configured'), sensitive: false });
+                    customMenus.push({
+                        type: 'submenu',
+                        label: section.label || _('Custom'),
+                        children,
+                    });
+                });
+            }
+        } catch (e) { /* ignore parse errors */ }
 
         const windowChildren = buildWindowMenu(window, detectedApp);
             const appleChildren = buildAppleMenu(this._buildStatusMenuChildren());
@@ -528,6 +652,7 @@ export class MenuManager {
             { label: this._menuIcon, children: appleChildren },
             { label: appName, children: appChildren },
             ...topLevelMenus,
+            ...customMenus,
         ];
 
         // Ensure we have exactly the required number of buttons

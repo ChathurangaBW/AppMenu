@@ -11,6 +11,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
 
+msgid "(untitled)"
+msgstr ""
+
 msgid "..."
 msgstr ""
 
@@ -21,6 +24,15 @@ msgid "About AppMenu"
 msgstr ""
 
 msgid "About This System"
+msgstr ""
+
+msgid "Activities"
+msgstr ""
+
+msgid "App Details"
+msgstr ""
+
+msgid "App Grid"
 msgstr ""
 
 msgid "AppMenu"
@@ -89,6 +101,9 @@ msgstr ""
 msgid "Current Status"
 msgstr ""
 
+msgid "Custom"
+msgstr ""
+
 msgid "Cut"
 msgstr ""
 
@@ -137,6 +152,9 @@ msgstr ""
 msgid "Extension: Active"
 msgstr ""
 
+msgid "Extensions"
+msgstr ""
+
 msgid "Fallback menus"
 msgstr ""
 
@@ -147,6 +165,12 @@ msgid "Find"
 msgstr ""
 
 msgid "Focused app: %s"
+msgstr ""
+
+msgid "Force Quit"
+msgstr ""
+
+msgid "Force Quit App"
 msgstr ""
 
 msgid "Force Quit..."
@@ -200,6 +224,9 @@ msgstr ""
 msgid "Log Out..."
 msgstr ""
 
+msgid "Log Out…"
+msgstr ""
+
 msgid "Login Window..."
 msgstr ""
 
@@ -242,7 +269,16 @@ msgstr ""
 msgid "Next Workspace"
 msgstr ""
 
+msgid "No"
+msgstr ""
+
 msgid "No eligible user accounts found"
+msgstr ""
+
+msgid "No focused window to quit."
+msgstr ""
+
+msgid "No items configured"
 msgstr ""
 
 msgid "No recent items"
@@ -323,6 +359,9 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
+msgid "Restart…"
+msgstr ""
+
 msgid "Restore AppMenu preferences to their packaged defaults."
 msgstr ""
 
@@ -374,10 +413,16 @@ msgstr ""
 msgid "Shut Down"
 msgstr ""
 
+msgid "Shut Down…"
+msgstr ""
+
 msgid "Sleep"
 msgstr ""
 
 msgid "Software"
+msgstr ""
+
+msgid "Software Center"
 msgstr ""
 
 msgid "Sort by Date"
@@ -395,7 +440,16 @@ msgstr ""
 msgid "Start typing to search apps, settings, and recent files."
 msgstr ""
 
+msgid "System Menu"
+msgstr ""
+
+msgid "System Monitor"
+msgstr ""
+
 msgid "System Settings"
+msgstr ""
+
+msgid "Terminal"
 msgstr ""
 
 msgid "Tile Left"
@@ -438,5 +492,8 @@ msgid "Workspace Indicator Position"
 msgstr ""
 
 msgid "Write diagnostic AppMenu logs to the GNOME Shell journal."
+msgstr ""
+
+msgid "application found. Set one in Preferences."
 msgstr ""
 
