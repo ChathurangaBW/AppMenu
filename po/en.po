@@ -441,3 +441,60 @@ msgstr ""
 
 msgid "Try a different app, setting, or recent file name."
 msgstr ""
+
+msgid "(untitled)"
+msgstr ""
+
+msgid "Activities"
+msgstr ""
+
+msgid "App Details"
+msgstr ""
+
+msgid "App Grid"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Extensions"
+msgstr ""
+
+msgid "Force Quit"
+msgstr ""
+
+msgid "Force Quit App"
+msgstr ""
+
+msgid "Log Out…"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "No focused window to quit."
+msgstr ""
+
+msgid "No items configured"
+msgstr ""
+
+msgid "Restart…"
+msgstr ""
+
+msgid "Shut Down…"
+msgstr ""
+
+msgid "Software Center"
+msgstr ""
+
+msgid "System Menu"
+msgstr ""
+
+msgid "System Monitor"
+msgstr ""
+
+msgid "Terminal"
+msgstr ""
+
+msgid "application found. Set one in Preferences."
+msgstr ""
