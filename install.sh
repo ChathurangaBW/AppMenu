@@ -7,6 +7,7 @@ SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 PREFIX="${PREFIX:-}"
 SYSTEM_INSTALL=0
 
+CLEAN_STALE=0
 for arg in "$@"; do
     case "$arg" in
         --system)
@@ -16,13 +17,17 @@ for arg in "$@"; do
             PREFIX="${arg#--prefix=}"
             SYSTEM_INSTALL=1
             ;;
+        --clean-stale)
+            CLEAN_STALE=1
+            ;;
         -h|--help)
             cat <<EOF
-Usage: ./install.sh [--system] [--prefix=/usr/local]
+Usage: ./install.sh [--system] [--prefix=/usr/local] [--clean-stale]
 
 Default installs to ~/.local/share/gnome-shell/extensions/$EXTENSION_UUID.
 Use --system to install to /usr/local/share/gnome-shell/extensions/$EXTENSION_UUID.
 Use --prefix=/usr to install to /usr/share/gnome-shell/extensions/$EXTENSION_UUID.
+--clean-stale  automatically remove stale copies in other extension folders.
 Set DESTDIR for packaging or scratch validation.
 EOF
             exit 0
@@ -39,6 +44,47 @@ if [[ "$SYSTEM_INSTALL" -eq 1 ]]; then
     EXTENSION_DIR="${DESTDIR:-}${PREFIX%/}/share/gnome-shell/extensions/$EXTENSION_UUID"
 else
     EXTENSION_DIR="${DESTDIR:-}$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
+fi
+
+# Find and warn about stale copies that would shadow this install.
+STALE_PATHS=()
+for candidate in \
+    "$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID" \
+    /usr/local/share/gnome-shell/extensions/"$EXTENSION_UUID" \
+    /usr/share/gnome-shell/extensions/"$EXTENSION_UUID"; do
+    if [[ "$candidate" != "$EXTENSION_DIR" && -d "$candidate" ]]; then
+        STALE_PATHS+=("$candidate")
+    fi
+done
+
+if (( ${#STALE_PATHS[@]} > 0 )); then
+    echo "--------------------------------------------------"
+    echo "WARNING: Stale AppMenu copies found outside the target install path."
+    echo "GNOME Shell may load the stale copy instead of this one."
+    echo
+    for p in "${STALE_PATHS[@]}"; do
+        if [[ -f "$p/i18n.js" ]]; then
+            echo "  PRESENT (has i18n.js)  $p"
+        else
+            echo "  BROKEN (no i18n.js)   $p  ← will cause 'Unable to load i18n.js' errors"
+        fi
+    done
+    echo
+    if [[ "$CLEAN_STALE" -eq 1 ]]; then
+        for p in "${STALE_PATHS[@]}"; do
+            echo "Removing stale copy: $p"
+            rm -rf "$p"
+        done
+        echo "Stale copies removed."
+    else
+        echo "Remove them manually:"
+        for p in "${STALE_PATHS[@]}"; do
+            echo "  sudo rm -rf $p"
+        done
+        echo
+        echo "Or rerun with --clean-stale to remove them automatically."
+    fi
+    echo "--------------------------------------------------"
 fi
 
 echo "--------------------------------------------------"

@@ -6,9 +6,11 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.3.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.3.2-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
+
+> **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is still present and shadowing your updated install. Run `bash install.sh --clean-stale` to remove it automatically, or see the [troubleshooting section](#i18njs-missing-from-usrlocalshare) below for manual cleanup.
 
 <p align="center">
   <img src="screenshot.png" alt="AppMenu screenshot" width="900" />
@@ -116,7 +118,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.3.1.zip`
+- `AppMenu-e.g.o-upload-v5.3.2.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -124,12 +126,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.3.1.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.3.2.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.3.1-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.3.1-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.3.1_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.3.1.zip`: source snapshot
+- `AppMenu-v5.3.2-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.3.2-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.3.2_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.3.2.zip`: source snapshot
 
 ### From Source
 
@@ -202,7 +204,17 @@ This is a GNOME Shell session cache behavior. The installed files can be correct
 
 ### `i18n.js` missing from `/usr/local/share`
 
-If GNOME Shell reports an error like `Unable to load file ... /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io/i18n.js`, a stale system-wide install is shadowing the updated user install. Remove or replace that system copy, then log out and back in:
+If GNOME Shell reports an error like `Unable to load file ... /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io/i18n.js`, a stale system-wide install is shadowing the updated user install. The old copy does not have `i18n.js`, and GNOME Shell loads it instead of the new one.
+
+**Automatic fix (recommended):**
+
+```bash
+bash install.sh --clean-stale
+```
+
+This removes stale copies in other extension folders before installing. Then log out and back in.
+
+**Manual fix:**
 
 ```bash
 sudo rm -rf /usr/local/share/gnome-shell/extensions/appmenu@ChathurangaBW.github.io
