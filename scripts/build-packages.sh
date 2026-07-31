@@ -28,7 +28,7 @@ zip -r "$SOURCE_ZIP" . -x '.git/*' '.git' 'dist/*' 'dist' '.scratch/*' '.scratch
 # NOTE: gschemas.compiled intentionally omitted for the e.g.o upload package.
 zip -r "$EGO_ZIP" \
   metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js stylesheet.css \
+  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js systemMenuButton.js prefs.js stylesheet.css \
   icons.json actions menus icons locale \
   schemas/org.gnome.shell.extensions.appmenu.gschema.xml >/dev/null
 

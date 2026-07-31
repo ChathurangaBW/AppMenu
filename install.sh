@@ -98,7 +98,7 @@ mkdir -p "$EXTENSION_DIR"
 echo "Copying extension files..."
 for item in \
     metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js stylesheet.css \
+    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js systemMenuButton.js prefs.js stylesheet.css \
     actions menus icons icons.json locale uninstall.sh schemas; do
     cp -rv "$SOURCE_DIR/$item" "$EXTENSION_DIR/"
 done
