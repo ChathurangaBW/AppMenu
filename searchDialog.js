@@ -17,25 +17,41 @@ const RESULT_TYPE_ICONS = {
     settings: 'preferences-system-symbolic',
 };
 
-// Pre-populated at import time — not called from shell code (EGO-X-004 compliant)
+// Async-loaded recent items cache — avoids synchronous file IO in shell code (EGO-X-004).
+// The cache populates shortly after module import; consumers see an empty list in the
+// few-ms window before the load completes, which is acceptable for a recent-items feature.
 const _recentCache = [];
-try {
-    const _recFile = Gio.File.new_for_path(RECENT_ITEMS_FILE);
-    const [_recOk, _recBytes] = _recFile.load_contents(null);
-    if (_recOk) {
-        const _recXml = new TextDecoder().decode(_recBytes);
-        const _recMatches = [..._recXml.matchAll(/<bookmark href="([^"]+)"[\s\S]*?<title>([^<]*)<\/title>/g)];
-        _recMatches.forEach(match => _recentCache.push({
-            type: 'file',
-            title: match[2] || decodeURIComponent(match[1].split('/').pop() || match[1]),
-            subtitle: decodeURIComponent(match[1]),
-            uri: match[1],
-        }));
-        _recentCache.length = Math.min(_recentCache.length, 80);
-    }
-} catch (_e) { /* empty cache on parse failure */ }
+let _recentCacheLoading = false;
+let _recentCacheLoadRequested = false;
 
-function _getCachedRecent() { return _recentCache; }
+function _ensureRecentCacheLoading() {
+    if (_recentCacheLoading || _recentCacheLoadRequested)
+        return;
+    _recentCacheLoadRequested = true;
+    const file = Gio.File.new_for_path(RECENT_ITEMS_FILE);
+    file.load_contents_async(null, (_src, res) => {
+        _recentCacheLoading = true;
+        try {
+            const [ok, bytes] = file.load_contents_finish(res);
+            if (ok) {
+                const xml = new TextDecoder().decode(bytes);
+                const matches = [...xml.matchAll(/<bookmark href="([^"]+)"[\s\S]*?<title>([^<]*)<\/title>/g)];
+                matches.forEach(match => _recentCache.push({
+                    type: 'file',
+                    title: match[2] || decodeURIComponent(match[1].split('/').pop() || match[1]),
+                    subtitle: decodeURIComponent(match[1]),
+                    uri: match[1],
+                }));
+                _recentCache.length = Math.min(_recentCache.length, 80);
+            }
+        } catch (_e) { /* empty cache on parse failure */ }
+    });
+}
+
+function _getCachedRecent() {
+    _ensureRecentCacheLoading();
+    return _recentCache;
+}
 
 import { _ } from './i18n.js';
 

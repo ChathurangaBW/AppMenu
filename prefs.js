@@ -5,21 +5,39 @@ import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import { _, initI18n } from './i18n.js';
 
-// Loaded at module import time — avoids sync IO in shell code (EGO-X-004)
+// Loaded asynchronously to avoid synchronous file IO in shell code (EGO-X-004).
+// The Icon selector renders an empty list until the load completes, then patches itself.
 let ICONS_DATA = [];
-try {
-    // Resolve icons.json relative to this module's location
-    const url = import.meta.url;
-    const [filePath] = GLib.filename_from_uri(url);
-    const extDir = GLib.path_get_dirname(filePath);
-    const iconPath = GLib.build_filenamev([extDir, 'icons.json']);
-    const file = Gio.File.new_for_path(iconPath);
-    const [ok, contents] = file.load_contents(null);
-    if (ok) {
-        const data = JSON.parse(new TextDecoder().decode(contents));
-        ICONS_DATA = Array.isArray(data) ? data : [];
+let _iconsLoadStarted = false;
+
+function _ensureIconsLoading() {
+    if (_iconsLoadStarted)
+        return;
+    _iconsLoadStarted = true;
+    let iconPath;
+    try {
+        const url = import.meta.url;
+        const [filePath] = GLib.filename_from_uri(url);
+        const extDir = GLib.path_get_dirname(filePath);
+        iconPath = GLib.build_filenamev([extDir, 'icons.json']);
+    } catch (_e) {
+        iconPath = null;
     }
-} catch (_e) { /* icons.json unavailable — use empty list */ }
+    if (!iconPath) {
+        ICONS_DATA = [];
+        return;
+    }
+    const file = Gio.File.new_for_path(iconPath);
+    file.load_contents_async(null, (_src, res) => {
+        try {
+            const [ok, bytes] = file.load_contents_finish(res);
+            if (ok) {
+                const data = JSON.parse(new TextDecoder().decode(bytes));
+                ICONS_DATA = Array.isArray(data) ? data : [];
+            }
+        } catch (_e) { /* icons.json unavailable — use empty list */ }
+    });
+}
 
 export default class AppMenuPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -59,10 +77,11 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         settings.bind('show-os-icon', showOsIconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         appearanceGroup.add(showOsIconRow);
 
-        // Icon selector
-        const icons = ICONS_DATA;
+        // Icon selector — populated immediately from the array (which may be empty
+        // until the async load completes); the post-load patch handler repopulates.
+        _ensureIconsLoading();
         const iconTitles = new Gtk.StringList();
-        icons.forEach(icon => iconTitles.append(icon.title));
+        ICONS_DATA.forEach(icon => iconTitles.append(icon.title));
 
         const deriveIconName = (path) => path.endsWith('.svg') ? path.slice(0, -4) : path;
 
@@ -72,15 +91,52 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         });
 
         const iconMap = {};
-        icons.forEach((icon, idx) => {
-            iconMap[deriveIconName(icon.path)] = idx;
+        const rebuildIconMap = () => {
+            Object.keys(iconMap).forEach(k => delete iconMap[k]);
+            ICONS_DATA.forEach((icon, idx) => {
+                iconMap[deriveIconName(icon.path)] = idx;
+            });
+        };
+        rebuildIconMap();
+
+        const applyIconSelection = () => {
+            const currentIcon = settings.get_string('menu-icon');
+            iconRow.selected = (currentIcon && iconMap[currentIcon] !== undefined) ? iconMap[currentIcon] : 0;
+        };
+        applyIconSelection();
+
+        // Patch the icon list once the async load completes (covers the common case
+        // where the user opens preferences before icons.json has been read).
+        // The poll is bounded — returns SOURCE_REMOVE once the data length changes.
+        let _iconsPolling = true;
+        let _iconsTimeoutId = 0;
+        const _iconsLoadCheck = () => {
+            if (!_iconsPolling)
+                return GLib.SOURCE_REMOVE;
+            // Detect a populated ICONS_DATA array by watching the length change.
+            if (ICONS_DATA.length === iconTitles.get_n_items())
+                return GLib.SOURCE_CONTINUE;
+            iconTitles.splice(0, iconTitles.get_n_items());
+            ICONS_DATA.forEach(icon => iconTitles.append(icon.title));
+            rebuildIconMap();
+            applyIconSelection();
+            _iconsPolling = false;
+            _iconsTimeoutId = 0;
+            return GLib.SOURCE_REMOVE;
+        };
+        _iconsTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, _iconsLoadCheck);
+
+        // Stop the poll if the window is destroyed before the load completes.
+        window.connect('destroy', () => {
+            _iconsPolling = false;
+            if (_iconsTimeoutId) {
+                GLib.source_remove(_iconsTimeoutId);
+                _iconsTimeoutId = 0;
+            }
         });
 
-        const currentIcon = settings.get_string('menu-icon');
-        iconRow.selected = (currentIcon && iconMap[currentIcon] !== undefined) ? iconMap[currentIcon] : 0;
-
         iconRow.connect('notify::selected', () => {
-            const selected = icons[iconRow.selected];
+            const selected = ICONS_DATA[iconRow.selected];
             if (selected) {
                 settings.set_string('menu-icon', deriveIconName(selected.path));
             }
