@@ -187,7 +187,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
             if (child?._iconName)
                 settings.set_string('menu-icon', child._iconName);
         });
-        settings.connect('changed::menu-icon', updateGallerySelection);
+        const settingsSignalIds = [settings.connect('changed::menu-icon', updateGallerySelection)];
 
         const iconGalleryScroll = new Gtk.ScrolledWindow({
             min_content_height: 250,
@@ -242,9 +242,9 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         iconSizeRow.connect('notify::value', () => {
             settings.set_int('icon-size', Math.round(iconSizeRow.get_value()));
         });
-        settings.connect('changed::icon-size', () => {
+        settingsSignalIds.push(settings.connect('changed::icon-size', () => {
             iconSizeRow.set_value(settings.get_int('icon-size') || 22);
-        });
+        }));
         appearanceGroup.add(iconSizeRow);
 
         // Lock to focused app
@@ -298,7 +298,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
             if (settings.get_string('workspace-indicator-position') !== value)
                 settings.set_string('workspace-indicator-position', value);
         });
-        settings.connect('changed::workspace-indicator-position', selectWorkspacePosition);
+        settingsSignalIds.push(settings.connect('changed::workspace-indicator-position', selectWorkspacePosition));
         settings.bind('show-workspace-indicator', workspacePositionRow, 'sensitive', Gio.SettingsBindFlags.GET);
         panelGroup.add(workspacePositionRow);
 
@@ -311,6 +311,12 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         diagnosticsGroup.add(debugLoggingRow);
 
         diagnosticsGroup.add(this._buildResetRow(settings));
+
+        window.connect('destroy', () => {
+            settingsSignalIds.forEach(id => {
+                try { settings.disconnect(id); } catch (_e) {}
+            });
+        });
     }
 
     _addGroup(page, title, description) {

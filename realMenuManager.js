@@ -19,6 +19,8 @@ const REGISTRAR_OBJECT_PATH = '/com/canonical/AppMenu/Registrar';
 const REGISTRAR_INTERFACE = 'com.canonical.AppMenu.Registrar';
 const GTK_ACTIONS_INTERFACE = 'org.gtk.Actions';
 
+Gio._promisify(Gio.DBusConnection.prototype, 'call', 'call_finish');
+
 // ── well-known action → human label ──────────────────────────────────────
 const KNOWN_LABELS = new Map([
     // App menu
@@ -297,78 +299,14 @@ function _busNameToObjectPath(busName) {
     return `/${busName.replace(/\./g, '/')}`;
 }
 
-// Scan the session bus for a well-known name matching a wmClass pattern.
-// wmClass is usually like "gnome-terminal-server" or "gedit" — we try
-// to match it against well-known names like "org.gnome.Ptyxis" etc.
-function _findBusNameFromWmClass(wmClass) {
-    if (!wmClass)
-        return null;
-
-    const lower = wmClass.toLowerCase();
-
+// Probe only an already-owned application bus. Activating an app just to
+// inspect its menu is surprising, and synchronous probes freeze GNOME Shell.
+async function _probeGtkActions(busName, objectPath, cancellable) {
     try {
-        const result = Gio.DBus.session.call_sync(
-            'org.freedesktop.DBus', '/org/freedesktop/DBus',
-            'org.freedesktop.DBus', 'ListNames',
-            null, null, Gio.DBusCallFlags.NONE, 500, null
-        );
-        const names = result.deepUnpack()[0];
-
-        // Try exact match first: eg "org.gnome.gedit" for wmClass "gedit"
-        for (const name of names) {
-            if (name.startsWith(':') || name.startsWith('org.freedesktop') ||
-                name.startsWith('org.gtk.vfs') || name.startsWith('org.a11y') ||
-                name.startsWith('org.gnome.Mutter') || name.startsWith('org.gnome.Settings') ||
-                name.startsWith('org.gnome.Shell') || name.startsWith('org.gnome.Session') ||
-                name.startsWith('org.pulseaudio') || name.startsWith('ca.desrt'))
-                continue;
-            const nameLower = name.toLowerCase();
-            // Match if the last component of the bus name equals wmClass
-            const lastDot = nameLower.lastIndexOf('.');
-            const lastPart = lastDot >= 0 ? nameLower.substring(lastDot + 1) : nameLower;
-            if (lastPart === lower || lastPart.replace(/-/g, '') === lower.replace(/-/g, ''))
-                return name;
-        }
-
-        // Fuzzy match: wmClass appears as a substring in the bus name
-        for (const name of names) {
-            if (name.startsWith(':') || name.startsWith('org.freedesktop')) continue;
-            if (name.toLowerCase().includes(lower))
-                return name;
-        }
-
-    } catch (_e) {
-        // ignore
-    }
-
-    return null;
-}
-
-// Try to bring an app's D-Bus service online via org.freedesktop.Application.Activate
-// so we can then query org.gtk.Actions. This works for GTK apps that use
-// GApplication's D-Bus activation but don't keep their bus name active.
-function _activateAppBus(busName, objectPath) {
-    try {
-        Gio.DBus.session.call_sync(
-            busName, objectPath,
-            'org.freedesktop.Application', 'Activate',
-            new GLib.Variant('(a{sv})', [{}]),
-            null, Gio.DBusCallFlags.NONE, 3000, null
-        );
-        return true;
-    } catch (_e) {
-        return false;
-    }
-}
-
-// Probe an object path for org.gtk.Actions, with optional D-Bus activation.
-// Returns array of action objects or null.
-function _probeGtkActions(busName, objectPath, activate = false) {
-    try {
-        const result = Gio.DBus.session.call_sync(
+        const result = await Gio.DBus.session.call(
             busName, objectPath,
             GTK_ACTIONS_INTERFACE, 'DescribeAll',
-            null, null, Gio.DBusCallFlags.NONE, activate ? 5000 : 2000, null
+            null, null, Gio.DBusCallFlags.NONE, 2000, cancellable
         );
         const [descriptions] = result.deepUnpack();
         if (!descriptions || Object.keys(descriptions).length === 0)
@@ -395,6 +333,9 @@ export class RealMenuManager {
         this._currentGtkContext = null;
         this._cachedActions = null;
         this._cachedWinActions = null;
+        this._currentWindow = null;
+        this._requestGeneration = 0;
+        this._requestCancellable = null;
         this._registrarFailed = false;
         this._isWayland = (GLib.getenv('XDG_SESSION_TYPE') ?? '').toLowerCase() === 'wayland';
     }
@@ -408,6 +349,8 @@ export class RealMenuManager {
     }
 
     invalidate() {
+        this._cancelRequest();
+        this._currentWindow = null;
         this._cachedActions = null;
         this._cachedWinActions = null;
         this._registrarFailed = false;
@@ -415,6 +358,8 @@ export class RealMenuManager {
     }
 
     destroy() {
+        this._cancelRequest();
+        this._currentWindow = null;
         this._cachedActions = null;
         this._cachedWinActions = null;
         this._registrarFailed = false;
@@ -427,73 +372,105 @@ export class RealMenuManager {
         this._currentAppName = appName;
 
         if (!this.enabled || !window) {
+            this._cancelRequest();
+            this._currentWindow = null;
             this._cachedActions = null;
             this._setBackend(null, null);
             return null;
         }
 
-        // 1) Registrar — only try once. If it fails (always on Wayland), never retry.
-        if (!this._registrarFailed) {
-            const registration = this._lookupRegistration(window);
-            if (registration) {
-                const key = `dbusmenu:${registration.service}|${registration.path}`;
-                this._cachedActions = null;
-                if (key !== this._currentKey)
-                    this._setBackend('dbusmenu', registration);
-                return this.buildCurrentMenuModel(appName);
-            }
-            // Registrar lookups are known to be unavailable/hang-prone on Wayland.
-            // Try at most once there, but keep probing on X11 where dbusmenu can work.
-            if (this._isWayland)
+        if (window !== this._currentWindow)
+            this._startLookup(window, detectedApp, wmClass);
+        return this.buildCurrentMenuModel(appName);
+    }
+
+    _cancelRequest() {
+        this._requestGeneration++;
+        this._requestCancellable?.cancel();
+        this._requestCancellable = null;
+    }
+
+    _isCurrentRequest(generation, window) {
+        return !this._requestCancellable?.is_cancelled()
+            && generation === this._requestGeneration
+            && window === this._currentWindow;
+    }
+
+    _startLookup(window, detectedApp, wmClass) {
+        this._cancelRequest();
+        this._currentWindow = window;
+        this._cachedActions = null;
+        this._cachedWinActions = null;
+        this._setBackend(null, null);
+
+        const generation = this._requestGeneration;
+        this._requestCancellable = new Gio.Cancellable();
+        const cancellable = this._requestCancellable;
+
+        if (!this._registrarFailed)
+            this._requestRegistration(window, generation, cancellable);
+        this._requestGtkActions(detectedApp, wmClass, generation, cancellable);
+    }
+
+    async _requestRegistration(window, generation, cancellable) {
+        if (!Dbusmenu)
+            return;
+
+        let windowId = 0;
+        try {
+            windowId = window?.get_id?.() ?? 0;
+        } catch (_e) {
+            return;
+        }
+        if (!windowId)
+            return;
+
+        try {
+            const result = await Gio.DBus.session.call(
+                REGISTRAR_BUS_NAME, REGISTRAR_OBJECT_PATH, REGISTRAR_INTERFACE,
+                'GetMenuForWindow', new GLib.Variant('(u)', [windowId]),
+                new GLib.VariantType('(so)'), Gio.DBusCallFlags.NONE, 1000, cancellable
+            );
+            if (!this._isCurrentRequest(generation, window))
+                return;
+
+            const [service, path] = result.deepUnpack();
+            if (!service || !path || path === '/')
+                return;
+
+            this._setBackend('dbusmenu', { service, path });
+            this._emitChanged();
+        } catch (_e) {
+            if (this._isWayland && this._isCurrentRequest(generation, window))
                 this._registrarFailed = true;
         }
+    }
 
-        // 2) GTK actions — re-evaluate on focus changes because windows from the
-        // same app can expose different per-window actions on Wayland.
-        let gtkContext = this._lookupGtkAppContext(detectedApp);
-        if (!gtkContext && wmClass) {
-            gtkContext = this._lookupGtkAppContext({ get_id: () => wmClass });
-            if (!gtkContext) {
-                const busName = _findBusNameFromWmClass(wmClass);
-                if (busName) {
-                    const objectPath = _busNameToObjectPath(busName);
-                    gtkContext = { busName, objectPath, appId: wmClass };
-                }
-            }
-            if (!gtkContext) {
-                const candidateBus = _desktopIdToBusName(wmClass);
-                if (candidateBus) {
-                    const candidatePath = _busNameToObjectPath(candidateBus);
-                    _activateAppBus(candidateBus, candidatePath);
-                    const actions = _probeGtkActions(candidateBus, candidatePath);
-                    if (actions && actions.length > 0) {
-                        gtkContext = { busName: candidateBus, objectPath: candidatePath, appId: wmClass };
-                    }
-                }
-            }
-        }
-        if (!gtkContext) {
-            this._cachedActions = null;
-            this._setBackend(null, null);
-            return null;
-        }
+    async _requestGtkActions(detectedApp, wmClass, generation, cancellable) {
+        const appId = detectedApp?.get_id?.() ?? wmClass;
+        const busName = _desktopIdToBusName(appId);
+        const objectPath = _busNameToObjectPath(busName);
+        if (!busName || !objectPath)
+            return;
 
-        // 3) Probe for per-window actions (e.g. tab.read-only in Ptyxis)
-        let winActions = null;
-        if (gtkContext.busName) {
-            const winObjPath = `${gtkContext.objectPath}/window/1`;
-            winActions = _probeGtkActions(gtkContext.busName, winObjPath);
-        }
+        const actions = await _probeGtkActions(busName, objectPath, cancellable);
+        if (!actions || !this._isCurrentRequest(generation, this._currentWindow))
+            return;
+        if (this._backendType === 'dbusmenu')
+            return;
 
-        const key = `gtk:${gtkContext.busName}|${gtkContext.objectPath}`;
-        if (key !== this._currentKey) {
-            this._cachedActions = null;
-            this._setBackend('gtk-actions', gtkContext);
-        }
+        const context = { busName, objectPath, appId };
+        this._setBackend('gtk-actions', context);
+        this._cachedActions = actions;
+
+        const winActions = await _probeGtkActions(busName, `${objectPath}/window/1`, cancellable);
+        if (!this._isCurrentRequest(generation, this._currentWindow))
+            return;
+        if (this._backendType === 'dbusmenu')
+            return;
 
         this._cachedWinActions = winActions;
-
-        return this.buildCurrentMenuModel(appName);
+        this._emitChanged();
     }
 
     buildCurrentMenuModel(appName = '') {
@@ -551,7 +528,7 @@ export class RealMenuManager {
         if (!this._currentGtkContext)
             return null;
 
-        const actions = this._fetchGtkActions(this._currentGtkContext);
+        const actions = this._cachedActions ?? [];
         if (actions.length === 0)
             return null;
 
@@ -619,78 +596,6 @@ export class RealMenuManager {
         };
     }
 
-    // ── D-Bus lookups ──────────────────────────────────────────────────
-
-    _lookupRegistration(window) {
-        if (!Dbusmenu)
-            return null;
-
-        let windowId = 0;
-        try {
-            windowId = window?.get_id?.() ?? 0;
-        } catch (_e) {
-            return null;
-        }
-
-        if (!windowId)
-            return null;
-
-        try {
-            const result = Gio.DBus.session.call_sync(
-                REGISTRAR_BUS_NAME,
-                REGISTRAR_OBJECT_PATH,
-                REGISTRAR_INTERFACE,
-                'GetMenuForWindow',
-                new GLib.Variant('(u)', [windowId]),
-                new GLib.VariantType('(so)'),
-                Gio.DBusCallFlags.NONE,
-                1000,  // 1s timeout — don't block the shell
-                null,
-            );
-
-            const [service, path] = result.deepUnpack();
-            if (!service || !path || path === '/')
-                return null;
-
-            return { service, path };
-        } catch (e) {
-            return null;
-        }
-    }
-
-    _lookupGtkAppContext(detectedApp) {
-        const appId = detectedApp?.get_id?.();
-        const busName = _desktopIdToBusName(appId);
-        if (!busName)
-            return null;
-
-        const objectPath = _busNameToObjectPath(busName);
-        if (!objectPath)
-            return null;
-
-        try {
-            const result = Gio.DBus.session.call_sync(
-                busName,
-                objectPath,
-                GTK_ACTIONS_INTERFACE,
-                'DescribeAll',
-                null,
-                null,
-                Gio.DBusCallFlags.NONE,
-                2000,
-                null,
-            );
-            const [descriptions] = result.deepUnpack();
-            if (!descriptions || Object.keys(descriptions).length === 0)
-                return null;
-        } catch (e) {
-            Logger.debug(`No GTK actions for ${busName}${objectPath}: ${e}`);
-            return null;
-        }
-
-        return { busName, objectPath, appId };
-    }
-
     // ── backend lifecycle ──────────────────────────────────────────────
 
     _setBackend(kind, registration) {
@@ -748,37 +653,6 @@ export class RealMenuManager {
     }
 
     // ── GTK action helpers ─────────────────────────────────────────────
-
-    _fetchGtkActions(context) {
-        try {
-            const result = Gio.DBus.session.call_sync(
-                context.busName,
-                context.objectPath,
-                GTK_ACTIONS_INTERFACE,
-                'DescribeAll',
-                null,
-                null,
-                Gio.DBusCallFlags.NONE,
-                2000,
-                null,
-            );
-            const [descriptions] = result.deepUnpack();
-            return Object.entries(descriptions)
-                .map(([name, details]) => ({
-                    name,
-                    objectPath: context.objectPath,
-                    ..._unpackGtkActionDetails(details),
-                }))
-                .filter(action => action.parameterType === '');
-        } catch (e) {
-            if (e.matches?.(Gio.DBusError, Gio.DBusError.UNKNOWN_METHOD))
-                Logger.debug(`GTK actions are unavailable for ${context.busName}${context.objectPath}.`);
-            else
-                Logger.error(`Failed to fetch GTK actions for ${context.busName}${context.objectPath}: ${e}`);
-            return [];
-        }
-    }
-
     _buildGtkActionItems(actions) {
         return actions
             .map(action => this._buildGtkActionItem(action))
@@ -799,13 +673,14 @@ export class RealMenuManager {
         };
     }
 
-    _activateGtkAction(name, objectPath = null) {
+    async _activateGtkAction(name, objectPath = null) {
         if (!this._currentGtkContext)
             return;
+        const context = this._currentGtkContext;
         try {
-            Gio.DBus.session.call_sync(
-                this._currentGtkContext.busName,
-                objectPath ?? this._currentGtkContext.objectPath,
+            await Gio.DBus.session.call(
+                context.busName,
+                objectPath ?? context.objectPath,
                 GTK_ACTIONS_INTERFACE,
                 'Activate',
                 new GLib.Variant('(sav@a{sv})', [name, [], new GLib.Variant('a{sv}', {})]),

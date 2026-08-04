@@ -80,6 +80,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
     this._globalHoverMonitorId = 0;
     this._cancellable = new Gio.Cancellable();
     this._isDestroyed = false;
+    this._populateGeneration = 0;
 
     // Build UI
     const label = new St.Label({
@@ -134,6 +135,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
 
   destroy() {
     this._isDestroyed = true;
+    this._populateGeneration++;
 
     if (this._cancellable) {
       this._cancellable.cancel();
@@ -167,13 +169,15 @@ export const RecentItemsSubmenu = GObject.registerClass(
   }
 
   async _populateMenu(menu) {
+    const generation = ++this._populateGeneration;
+    if (!this._isCurrentMenu(menu, generation)) return false;
     menu.removeAll();
 
     const recentItems = await this._getRecentItems();
-    if (this._isDestroyed) return;
+    if (!this._isCurrentMenu(menu, generation)) return false;
 
     const recentApplications = await this._getRecentApplications(APPLICATIONS_RECENT_LIMIT);
-    if (this._isDestroyed) return;
+    if (!this._isCurrentMenu(menu, generation)) return false;
 
     const files = [];
     for (const item of recentItems) {
@@ -191,7 +195,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
       const placeholder = new PopupMenu.PopupMenuItem(_('No recent items'));
       placeholder.setSensitive(false);
       menu.addMenuItem(placeholder);
-      return;
+      return true;
     }
 
     let hasEntries = false;
@@ -247,6 +251,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
       clearItem.connect('activate', () => this._clearRecentItems());
       menu.addMenuItem(clearItem);
     }
+    return true;
   }
 
   _clearRecentItems() {
@@ -500,15 +505,24 @@ export const RecentItemsSubmenu = GObject.registerClass(
 
   async _ensureRecentMenuAndOpen() {
     const menu = await this._ensureRecentMenu();
-    menu.open(true);
+    if (menu && !this._isDestroyed && menu === this._recentMenu && this._parentMenu?.isOpen)
+      menu.open(true);
+  }
+
+  _isCurrentMenu(menu, generation) {
+    return !this._isDestroyed
+      && generation === this._populateGeneration
+      && menu === this._recentMenu
+      && !this._recentMenuClosing;
   }
 
   async _ensureRecentMenu() {
     if (this._recentMenu) {
-      await this._populateMenu(this._recentMenu);
-      if (this._isDestroyed) return this._recentMenu;
+      const menu = this._recentMenu;
+      const populated = await this._populateMenu(menu);
+      if (!populated) return null;
       this._connectMainMenuItemSignals();
-      return this._recentMenu;
+      return menu;
     }
 
     this._recentMenu = new PopupMenu.PopupMenu(this.actor, 0.0, St.Side.RIGHT);
@@ -530,10 +544,6 @@ export const RecentItemsSubmenu = GObject.registerClass(
       this._recentMenuManager.addMenu(this._recentMenu);
       this._managerRegistered = true;
     }
-
-    await this._populateMenu(this._recentMenu);
-    if (this._isDestroyed) return this._recentMenu;
-    this._connectMainMenuItemSignals();
 
     this._recentMenuMenuSignalIds.push(
       this._recentMenu.connect('open-state-changed', (_, open) => {
@@ -576,6 +586,10 @@ export const RecentItemsSubmenu = GObject.registerClass(
         this._closeAndDestroyRecentMenu();
       });
     }
+
+    const populated = await this._populateMenu(this._recentMenu);
+    if (!populated || this._isDestroyed || this._recentMenuClosing) return null;
+    this._connectMainMenuItemSignals();
 
     return this._recentMenu;
   }
@@ -676,6 +690,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
     }
 
     this._recentMenuClosing = true;
+    this._populateGeneration++;
 
     try {
       this._cancelClose();

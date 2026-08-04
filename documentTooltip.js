@@ -27,6 +27,7 @@ export const DocumentTooltip = GObject.registerClass(
       this._delayMs = delayMs;
       this._timeoutId = 0;
       this._targetSignals = [];
+      this._isDestroyed = false;
 
       if (!this._target) {
         return;
@@ -78,12 +79,17 @@ export const DocumentTooltip = GObject.registerClass(
         opacity: 0,
         duration: 100,
         mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-        onComplete: () => this.hide(),
+        onComplete: () => {
+          if (!this._isDestroyed)
+            this.hide();
+        },
       });
     }
 
     destroy() {
+      this._isDestroyed = true;
       this._cancelTimeout();
+      this.remove_all_transitions();
       this._disconnectTargetSignals();
       this._target = null;
       if (this.get_parent()) {

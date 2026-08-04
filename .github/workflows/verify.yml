@@ -1,0 +1,17 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y gettext-base glib2.0-bin rsync zip
+      - name: Build release artifacts
+        run: APPMENU_VERSION=0.0.0-ci scripts/build-packages.sh
+      - name: Verify release artifacts
+        run: scripts/verify-release.sh 0.0.0-ci

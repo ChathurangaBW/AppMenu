@@ -4,7 +4,7 @@ import St from 'gi://St';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-const INDICATOR_NAME = 'AppMenuWorkspaceIndicator';
+const INDICATOR_NAME = 'appmenu@ChathurangaBW.github.io-workspace-indicator';
 
 const WorkspaceIndicatorButton = GObject.registerClass(
 class WorkspaceIndicatorButton extends PanelMenu.Button {

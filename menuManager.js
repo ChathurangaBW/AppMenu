@@ -96,6 +96,9 @@ const TopLevelMenuButton = GObject.registerClass(
     }
 
     _executeNativeAction(action, closeMenu = true) {
+        const targetWindow = global.display.get_focus_window();
+        const targetApp = this._appInstance;
+
         // Close the menu first to return focus to the previous window
         if (closeMenu && this.menu) {
             this.menu.close(true);
@@ -114,17 +117,29 @@ const TopLevelMenuButton = GObject.registerClass(
         }
         if (action.startsWith('custom-shortcut:')) {
             let accel = action.slice('custom-shortcut:'.length);
-            this._sendAccelerator(accel);
-            return;
+            action = `custom-shortcut:${accel}`;
         }
 
-        // Give a brief moment for focus to return to Nautilus
+        // Closing a popup is asynchronous. Preserve the selected target and
+        // cancel rather than sending an action to a newly focused application.
         const timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
             if (this._menuManagerInstance)
                 this._menuManagerInstance._timeoutIds = this._menuManagerInstance._timeoutIds.filter(id => id !== timeoutId);
+
+            if (this._destroyed || this._menuManagerInstance?._destroyed)
+                return GLib.SOURCE_REMOVE;
+            if (targetWindow && global.display.get_focus_window() !== targetWindow) {
+                Logger.debug(`Cancelled '${action}' because focus changed before dispatch.`);
+                return GLib.SOURCE_REMOVE;
+            }
+
+            if (action.startsWith('custom-shortcut:')) {
+                this._sendAccelerator(action.slice('custom-shortcut:'.length));
+                return GLib.SOURCE_REMOVE;
+            }
             const ctx = {
-                window: global.display.get_focus_window(),
-                app: this._appInstance,
+                window: targetWindow,
+                app: targetApp,
             };
             dispatch(action, ctx, this._menuManagerInstance);
             return GLib.SOURCE_REMOVE;
@@ -338,10 +353,6 @@ export class MenuManager {
         this._windowTracker = Shell.WindowTracker.get_default();
         this._appSystem = Shell.AppSystem.get_default();
 
-            // App menu cache — avoid rebuild when same app stays focused
-            this._lastAppId = null;
-            this._lastAppMenuData = null;
-            this._lastRealMenuKey = null;
             this._lastDiagnostics = null;
 
         // Listen for settings changes
@@ -354,19 +365,14 @@ export class MenuManager {
                 this._settings.connect('changed::menu-icon', () => {
                     this._cachedMenuIcon = this._settings.get_string('menu-icon');
                     // Rebuild immediately so preferences do not require a focus change.
-                    this._lastAppId = null;
-                    this._lastRealMenuKey = null;
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
                 this._settings.connect('changed::use-real-menus', () => {
-                    this._lastAppId = null;
-                    this._lastRealMenuKey = null;
                     this._realMenuManager.invalidate();
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
                 this._settings.connect('changed::icon-size', () => {
                     this._cachedIconSize = Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22));
-                    this._lastAppId = null;
                     if (this._buttons.length > 0) {
                         const btn0 = this._buttons[0];
                         if (btn0._isIcon && btn0._titleWidget) {
@@ -542,10 +548,8 @@ export class MenuManager {
             }
         }
 
-        const currentAppId = detectedApp ? detectedApp.get_id() : null;
         const wmClass = window?.get_wm_class?.() ?? '';
             const realMenuData = this._realMenuManager.updateForWindow(window, appName, detectedApp, wmClass);
-            const realMenuKey = realMenuData?.registrationKey ?? null;
             const menuSource = realMenuData?.topLevelMenus?.length
                 ? _('Real exported menus')
                 : _('Fallback menus');
@@ -556,17 +560,6 @@ export class MenuManager {
                 hasWindowTitle: Boolean(window?.get_title?.()),
                 menuSource,
             };
-
-        // Skip rebuild if the effective menu state is unchanged
-        if (!force
-            && currentAppId === this._lastAppId
-            && realMenuKey === this._lastRealMenuKey
-            && this._lastAppMenuData) {
-            if (this._buttons.length > 0) {
-                this._buttons[0].visible = this._showOsIcon;
-            }
-            return;
-        }
 
         const fallbackAppChildren = isAppFocused
             ? buildAppMenu(appName, detectedApp, window)
@@ -658,11 +651,6 @@ export class MenuManager {
             if (!hasWindowMenu)
                 topLevelMenus.push({ label: _('Window'), children: windowChildren });
         }
-
-        // Cache app menu data
-        this._lastAppId = currentAppId;
-        this._lastAppMenuData = appChildren;
-        this._lastRealMenuKey = realMenuKey;
 
         const newMenuData = [
             { label: this._menuIcon, children: appleChildren },

@@ -39,6 +39,7 @@ Gio._promisify(Gio.DBusProxy.prototype, 'call');
 const DEFAULT_BUTTON_ICON = 'system-users-symbolic';
 const AVATAR_ICON_SIZE = 64;
 const MINIMUM_VISIBLE_UID = 1000;
+const STATUS_AREA_NAME = 'appmenu@ChathurangaBW.github.io-user-switcher';
 
 /**
  * Manages the UserSwitcherButton lifecycle — shows/hides based on user count.
@@ -141,7 +142,7 @@ export class UserSwitcherController {
 
         if (shouldShow && !this._userSwitcher) {
             this._userSwitcher = new UserSwitcherButton(this._extension);
-            Main.panel.addToStatusArea('AppMenuUserSwitcher', this._userSwitcher, 1, 'right');
+            Main.panel.addToStatusArea(STATUS_AREA_NAME, this._userSwitcher, 1, 'right');
         } else if (!shouldShow && this._userSwitcher) {
             this._userSwitcher.destroy();
             this._userSwitcher = null;
@@ -167,6 +168,7 @@ export const UserSwitcherButton = GObject.registerClass(
             this._cancellable = new Gio.Cancellable();
             this._isDestroyed = false;
             this._rebuilding = false;
+            this._rebuildPending = false;
 
             this._buttonIcon = new St.Icon({
                 icon_name: DEFAULT_BUTTON_ICON,
@@ -251,7 +253,10 @@ export const UserSwitcherButton = GObject.registerClass(
         async _rebuildMenu() {
             if (!this._userManager || !this.menu || !this._userManager.is_loaded) return;
             // Prevent concurrent rebuild storms from rapid user-changed signals
-            if (this._rebuilding) return;
+            if (this._rebuilding) {
+                this._rebuildPending = true;
+                return;
+            }
             this._rebuilding = true;
 
             try {
@@ -297,6 +302,13 @@ export const UserSwitcherButton = GObject.registerClass(
                 this._updatePanelIcon(users, currentUserName);
             } finally {
                 this._rebuilding = false;
+                if (this._rebuildPending && !this._isDestroyed) {
+                    this._rebuildPending = false;
+                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                        this._rebuildMenu().catch(logError);
+                        return GLib.SOURCE_REMOVE;
+                    });
+                }
             }
         }
 

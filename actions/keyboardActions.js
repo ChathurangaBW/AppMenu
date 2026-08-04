@@ -42,7 +42,7 @@ function simulateShortcut(virtualDevice, modifier, action, useModifier) {
     }
 }
 
-function simulateNativeOpenWith(virtualDevice, manager) {
+function simulateNativeOpenWith(virtualDevice, manager, targetWindow) {
     const t = GLib.get_monotonic_time();
     sendKey(virtualDevice, t, SC.KEY_SHIFT, Clutter.KeyState.PRESSED);
     sendKey(virtualDevice, t + 10, SC.KEY_F10, Clutter.KeyState.PRESSED);
@@ -50,6 +50,11 @@ function simulateNativeOpenWith(virtualDevice, manager) {
     sendKey(virtualDevice, t + 30, SC.KEY_SHIFT, Clutter.KeyState.RELEASED);
 
     const timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
+        if (targetWindow && global.display.get_focus_window() !== targetWindow) {
+            if (manager) manager._timeoutIds = manager._timeoutIds.filter(id => id !== timeoutId);
+            Logger.debug('Cancelled native-open-with because focus changed before dispatch.');
+            return GLib.SOURCE_REMOVE;
+        }
         const now = GLib.get_monotonic_time();
         sendKey(virtualDevice, now, SC.KEY_H, Clutter.KeyState.PRESSED);
         sendKey(virtualDevice, now + 10, SC.KEY_H, Clutter.KeyState.RELEASED);
@@ -67,7 +72,7 @@ function simulateNativeOpenWith(virtualDevice, manager) {
  * Uses the cached virtual device from MenuManager when available,
  * falling back to creating a new one if no manager is provided.
  */
-export function executeKeyboardAction(action, manager) {
+export function executeKeyboardAction(action, manager, targetWindow = null) {
     const vd = manager ? manager.getVirtualDevice() : null;
 
     if (action === 'native-open-with') {
@@ -76,7 +81,7 @@ export function executeKeyboardAction(action, manager) {
                 const seat = Clutter.get_default_backend().get_default_seat();
                 return seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             })();
-            if (device) simulateNativeOpenWith(device, manager);
+            if (device) simulateNativeOpenWith(device, manager, targetWindow);
             return true;
         } catch (e) {
             Logger.error(`Virtual keyboard error: ${e}`);

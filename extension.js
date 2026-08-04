@@ -25,6 +25,7 @@ export default class AppMenuExtension extends Extension {
         this._workspaceIndicatorController = null;
         this._searchShortcutInstalled = false;
         this._overviewHidden = false;
+        this._overviewWasVisible = false;
     }
 
     enable() {
@@ -65,10 +66,7 @@ export default class AppMenuExtension extends Extension {
         if (!statusArea) return;
 
         for (const name of Object.keys(statusArea)) {
-            if (name !== 'appmenu-system'
-                && name !== 'AppMenuUserSwitcher'
-                && name !== 'AppMenuWorkspaceIndicator'
-                && !name.startsWith(`${uuid}-`))
+            if (!name.startsWith(`${uuid}-`))
                 continue;
 
             try {
@@ -84,11 +82,14 @@ export default class AppMenuExtension extends Extension {
         if (!activities) return;
         let shouldHide = this._settings.get_boolean('hide-overview-button');
         if (shouldHide && !this._overviewHidden) {
+            this._overviewWasVisible = activities.visible;
             activities.hide();
             this._overviewHidden = true;
         } else if (!shouldHide && this._overviewHidden) {
-            activities.show();
+            if (this._overviewWasVisible)
+                activities.show();
             this._overviewHidden = false;
+            this._overviewWasVisible = false;
         }
     }
 
@@ -183,11 +184,12 @@ export default class AppMenuExtension extends Extension {
             this._settingsChangedId = null;
         }
 
-        if (this._overviewHidden) {
+        if (this._overviewHidden && this._overviewWasVisible) {
             let activities = Main.panel.statusArea['activities'];
             if (activities) activities.show();
-            this._overviewHidden = false;
         }
+        this._overviewHidden = false;
+        this._overviewWasVisible = false;
 
         disposeViewActions();
         setLoggerSettings(null);

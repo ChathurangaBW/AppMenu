@@ -48,7 +48,7 @@ export function dispatch(actionStr, ctx, manager) {
     }
 
     // Fallback: keyboard-simulated shortcuts
-    if (executeKeyboardAction(action, manager)) return true;
+    if (executeKeyboardAction(action, manager, ctx?.window ?? null)) return true;
 
     Logger.warn(`Unknown action: "${action}"`);
     return false;

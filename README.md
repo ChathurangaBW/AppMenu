@@ -6,13 +6,13 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.6.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.6.2-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
 > **Note:** AppMenu is commonly referred to as the **global menu** for GNOME Shell. It is a macOS-style **global menu bar** (one menu bar across the top panel that reflects the focused app) plus an Apple menu with system actions, Spotlight-style search, user switching, and workspace controls — all in a single zero-dependency extension. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
 
-> **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is still present and shadowing your updated install. Run `bash install.sh --clean-stale` to remove it automatically, or see the [troubleshooting section](#i18njs-missing-from-usrlocalshare) below for manual cleanup.
+> **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is shadowing your updated install. Remove system copies with your package manager or manually; `--clean-stale` only removes stale user installs.
 
 <p align="center">
   <img src="screenshot.png" alt="AppMenu global menu bar screenshot" width="900" />
@@ -148,7 +148,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.6.1.zip`
+- `AppMenu-e.g.o-upload-v5.6.2.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -156,12 +156,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.6.1.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.6.2.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.6.1-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.6.1-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.6.1_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.6.1.zip`: source snapshot
+- `AppMenu-v5.6.2-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.6.2-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.6.2_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.6.2.zip`: source snapshot
 
 ### From Source
 
@@ -275,9 +275,13 @@ Build release packages:
 
 ```bash
 ./scripts/build-packages.sh
+./scripts/verify-release.sh 5.6.2
 ```
 
-Generated files go to `dist/`.
+Generated files and SHA-256 checksums go to `dist/`. Release builds require a
+clean tracked worktree; use `APPMENU_ALLOW_DIRTY=1` only for local development
+artifacts. The verifier rejects workspace contamination, mismatched checksums,
+invalid archives, and synchronous D-Bus calls in runtime JavaScript.
 
 ## Project Structure
 

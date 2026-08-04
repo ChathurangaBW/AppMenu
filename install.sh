@@ -46,6 +46,21 @@ else
     EXTENSION_DIR="${DESTDIR:-}$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 fi
 
+if [[ "$SYSTEM_INSTALL" -eq 1 && -z "${DESTDIR:-}" && "$EUID" -ne 0 ]]; then
+    echo "System installs require root privileges. Re-run with sudo or set DESTDIR for packaging." >&2
+    exit 1
+fi
+
+for item in \
+    metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
+    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
+    actions menus icons icons.json locale uninstall.sh schemas; do
+    if [[ ! -e "$SOURCE_DIR/$item" ]]; then
+        echo "Required extension file is missing: $SOURCE_DIR/$item" >&2
+        exit 1
+    fi
+done
+
 # Find and warn about stale copies that would shadow this install. Keep all
 # candidates under DESTDIR during staged/package installs.
 STALE_PATHS=()
@@ -74,12 +89,14 @@ if (( ${#STALE_PATHS[@]} > 0 )); then
     echo
     if [[ "$CLEAN_STALE" -eq 1 ]]; then
         for p in "${STALE_PATHS[@]}"; do
-            echo "Removing stale copy: $p"
-            if ! rm -rf "$p"; then
-                echo "Could not remove stale copy (check permissions): $p" >&2
+            if [[ "$p" == "$DEST_PREFIX$HOME/.local/"* ]]; then
+                echo "Removing stale user copy: $p"
+                rm -rf "$p"
+            else
+                echo "Not removing system copy: $p (use your package manager or remove it manually)" >&2
             fi
         done
-        echo "Stale copies removed."
+        echo "Eligible stale user copies removed."
     else
         echo "Remove them manually:"
         for p in "${STALE_PATHS[@]}"; do
@@ -95,23 +112,46 @@ echo "--------------------------------------------------"
 echo "Installing AppMenu..."
 echo "--------------------------------------------------"
 
-echo "Clearing old structures..."
-rm -rf "$EXTENSION_DIR"
-mkdir -p "$EXTENSION_DIR"
+STAGING_DIR="${EXTENSION_DIR}.new.$$"
+BACKUP_DIR="${EXTENSION_DIR}.backup.$$"
+INSTALLED=0
+
+cleanup_failed_install() {
+    if [[ "$INSTALLED" -eq 1 ]]; then
+        return
+    fi
+    rm -rf "$STAGING_DIR"
+    if [[ -d "$BACKUP_DIR" && ! -e "$EXTENSION_DIR" ]]; then
+        mv "$BACKUP_DIR" "$EXTENSION_DIR"
+    fi
+}
+trap cleanup_failed_install EXIT
+
+mkdir -p "$(dirname "$EXTENSION_DIR")"
+rm -rf "$STAGING_DIR" "$BACKUP_DIR"
+mkdir -p "$STAGING_DIR"
 
 echo "Copying extension files..."
 for item in \
     metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
     userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
     actions menus icons icons.json locale uninstall.sh schemas; do
-    cp -rv "$SOURCE_DIR/$item" "$EXTENSION_DIR/"
+    cp -a "$SOURCE_DIR/$item" "$STAGING_DIR/"
 done
 
-test -f "$EXTENSION_DIR/i18n.js"
-test -f "$EXTENSION_DIR/locale/en/LC_MESSAGES/appmenu.mo"
+test -f "$STAGING_DIR/i18n.js"
+test -f "$STAGING_DIR/locale/en/LC_MESSAGES/appmenu.mo"
 
 echo "Compiling GSettings schemas..."
-glib-compile-schemas "$EXTENSION_DIR/schemas/"
+glib-compile-schemas "$STAGING_DIR/schemas/"
+
+if [[ -e "$EXTENSION_DIR" ]]; then
+    mv "$EXTENSION_DIR" "$BACKUP_DIR"
+fi
+mv "$STAGING_DIR" "$EXTENSION_DIR"
+rm -rf "$BACKUP_DIR"
+INSTALLED=1
+trap - EXIT
 
 echo "--------------------------------------------------"
 echo "Installation complete!"
