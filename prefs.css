@@ -1,0 +1,25 @@
+.appmenu-icon-gallery {
+    padding: 8px;
+}
+
+.appmenu-icon-card {
+    min-width: 92px;
+    min-height: 82px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background-color: alpha(@theme_fg_color, 0.04);
+}
+
+.appmenu-icon-card:hover {
+    background-color: alpha(@theme_fg_color, 0.10);
+}
+
+.appmenu-icon-card-selected {
+    border-color: @accent_color;
+    background-color: alpha(@accent_color, 0.16);
+}
+
+.appmenu-icon-card-image {
+    min-width: 38px;
+    min-height: 38px;
+}

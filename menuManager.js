@@ -201,7 +201,10 @@ const TopLevelMenuButton = GObject.registerClass(
 
         try {
             this.menu.removeAll();
-        } catch (_e) { /* menu may already be disposed during rapid rebuilds */ }
+        } catch (_e) {
+            // Do not rebuild a popup whose actor was disposed during reload.
+            return;
+        }
         this._setMenuOpenHandler(openHandler);
         this._buildSubMenu(children, this.menu);
     }
@@ -309,6 +312,7 @@ export class MenuManager {
         this._settings = settings;
         this._buttons = [];
         this._timeoutIds = [];
+        this._destroyed = false;
         this._recentMenuManager = new PopupMenu.PopupMenuManager(this);
 
         // Virtual keyboard device — created once, reused across all actions
@@ -483,6 +487,9 @@ export class MenuManager {
         }
 
         updateMenuForWindow(window, force = false) {
+        if (this._destroyed)
+            return;
+
         let appName = _("Desktop");
         let isAppFocused = false;
         let detectedApp = null;
@@ -686,6 +693,8 @@ export class MenuManager {
 
         for (let i = 0; i < newMenuData.length; i++) {
             const btn = this._buttons[i];
+            if (!btn || btn._destroyed)
+                continue;
             const data = newMenuData[i];
 
             btn._appInstance = detectedApp;
@@ -696,17 +705,19 @@ export class MenuManager {
         // Destroy excess buttons (shouldn't happen, but defensive)
         while (this._buttons.length > newMenuData.length) {
             const extra = this._buttons.pop();
-            extra.destroy();
+            try { extra.destroy(); } catch (_e) {}
         }
 
         // Update OS icon visibility
-        if (this._buttons.length > 0) {
-            this._buttons[0].visible = this._showOsIcon;
+        if (this._buttons.length > 0 && !this._buttons[0]._destroyed) {
+            try { this._buttons[0].visible = this._showOsIcon; } catch (_e) {}
         }
     }
 
     clear() {
-        this._buttons.forEach(btn => btn.destroy());
+        this._buttons.forEach(btn => {
+            try { btn.destroy(); } catch (_e) {}
+        });
         this._buttons = [];
 
         // Safely cancel any active timeout loops to eliminate leaks/lint findings
@@ -717,6 +728,10 @@ export class MenuManager {
     }
 
     destroy() {
+        if (this._destroyed)
+            return;
+        this._destroyed = true;
+
         // Disconnect settings signals to prevent memory leaks
         if (this._settings && this._settingsSignalIds) {
             this._settingsSignalIds.forEach(id => {

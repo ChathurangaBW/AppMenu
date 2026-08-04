@@ -778,7 +778,10 @@ export class RealMenuManager {
                 }))
                 .filter(action => action.parameterType === '');
         } catch (e) {
-            Logger.error(`Failed to fetch GTK actions for ${context.busName}${context.objectPath}: ${e}`);
+            if (e.matches?.(Gio.DBusError, Gio.DBusError.UNKNOWN_METHOD))
+                Logger.debug(`GTK actions are unavailable for ${context.busName}${context.objectPath}.`);
+            else
+                Logger.error(`Failed to fetch GTK actions for ${context.busName}${context.objectPath}: ${e}`);
             return [];
         }
     }

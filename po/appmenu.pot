@@ -59,6 +59,9 @@ msgstr ""
 msgid "Bring All to Front"
 msgstr ""
 
+msgid "Choose an icon from the visual gallery below."
+msgstr ""
+
 msgid "Choose the panel icon and how AppMenu appears in the top bar."
 msgstr ""
 
@@ -345,6 +348,9 @@ msgid "Right side"
 msgstr ""
 
 msgid "Search apps, recent files, and settings"
+msgstr ""
+
+msgid "Search icons"
 msgstr ""
 
 msgid "Search..."

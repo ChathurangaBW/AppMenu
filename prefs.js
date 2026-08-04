@@ -1,6 +1,7 @@
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Gdk from 'gi://Gdk';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import { _, initI18n } from './i18n.js';
@@ -46,6 +47,19 @@ export default class AppMenuPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         initI18n(this);
 
+        const prefsCss = new Gtk.CssProvider();
+        try {
+            prefsCss.load_from_path(GLib.build_filenamev([this.path, 'prefs.css']));
+            Gtk.StyleContext.add_provider_for_display(
+                Gdk.Display.get_default(),
+                prefsCss,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+            window.connect('destroy', () => {
+                Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), prefsCss);
+            });
+        } catch (_e) {}
+
         const settings = this.getSettings('org.gnome.shell.extensions.appmenu');
 
         const page = new Adw.PreferencesPage();
@@ -80,33 +94,116 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         settings.bind('show-os-icon', showOsIconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         appearanceGroup.add(showOsIconRow);
 
-        // Icon selector — populated immediately from the array (which may be empty
-        // until the async load completes); the post-load patch handler repopulates.
+        // Visual icon gallery — populated asynchronously from icons.json.
         _ensureIconsLoading();
-        const iconTitles = new Gtk.StringList();
-        ICONS_DATA.forEach(icon => iconTitles.append(icon.title));
-
         const deriveIconName = (path) => path.endsWith('.svg') ? path.slice(0, -4) : path;
-
-        const iconRow = new Adw.ComboRow({
-            title: _('Icon'),
-            model: iconTitles,
+        let iconsDir = null;
+        try {
+            const [prefsPath] = GLib.filename_from_uri(import.meta.url);
+            iconsDir = GLib.build_filenamev([GLib.path_get_dirname(prefsPath), 'icons']);
+        } catch (_e) {}
+        const iconSearch = new Gtk.SearchEntry({
+            placeholder_text: _('Search icons'),
+            hexpand: true,
         });
 
-        const iconMap = {};
-        const rebuildIconMap = () => {
-            Object.keys(iconMap).forEach(k => delete iconMap[k]);
-            ICONS_DATA.forEach((icon, idx) => {
-                iconMap[deriveIconName(icon.path)] = idx;
+        const iconGallery = new Gtk.FlowBox({
+            selection_mode: Gtk.SelectionMode.SINGLE,
+            homogeneous: true,
+            row_spacing: 8,
+            column_spacing: 8,
+            min_children_per_line: 3,
+            max_children_per_line: 7,
+            activate_on_single_click: true,
+        });
+        iconGallery.add_css_class('appmenu-icon-gallery');
+        const iconCards = [];
+
+        const updateGallerySelection = () => {
+            const current = settings.get_string('menu-icon')
+                || deriveIconName(ICONS_DATA[0]?.path || '');
+            iconCards.forEach(card => {
+                if (card._iconName === current)
+                    card.add_css_class('appmenu-icon-card-selected');
+                else
+                    card.remove_css_class('appmenu-icon-card-selected');
             });
         };
-        rebuildIconMap();
 
-        const applyIconSelection = () => {
-            const currentIcon = settings.get_string('menu-icon');
-            iconRow.selected = (currentIcon && iconMap[currentIcon] !== undefined) ? iconMap[currentIcon] : 0;
+        const populateIconGallery = () => {
+            let child = iconGallery.get_first_child();
+            while (child) {
+                const next = child.get_next_sibling();
+                iconGallery.remove(child);
+                child = next;
+            }
+            iconCards.length = 0;
+
+            ICONS_DATA.forEach(icon => {
+                const iconName = deriveIconName(icon.path);
+                const card = new Gtk.FlowBoxChild({
+                    tooltip_text: icon.title,
+                });
+                card._iconName = iconName;
+                card._searchText = `${icon.title} ${iconName}`.toLowerCase();
+                card.add_css_class('appmenu-icon-card');
+
+                const box = new Gtk.Box({
+                    orientation: Gtk.Orientation.VERTICAL,
+                    spacing: 5,
+                    margin_top: 8,
+                    margin_bottom: 8,
+                    margin_start: 6,
+                    margin_end: 6,
+                    halign: Gtk.Align.CENTER,
+                });
+                const iconFile = iconsDir
+                    ? Gio.File.new_for_path(GLib.build_filenamev([iconsDir, icon.path]))
+                    : null;
+                const image = iconFile?.query_exists(null)
+                    ? new Gtk.Image({gicon: Gio.FileIcon.new(iconFile), pixel_size: 38})
+                    : new Gtk.Image({icon_name: iconName, pixel_size: 38});
+                image.add_css_class('appmenu-icon-card-image');
+                box.append(image);
+                box.append(new Gtk.Label({
+                    label: icon.title,
+                    ellipsize: 3,
+                    max_width_chars: 14,
+                }));
+                card.set_child(box);
+                iconGallery.append(card);
+                iconCards.push(card);
+            });
+
+            updateGallerySelection();
         };
-        applyIconSelection();
+
+        iconGallery.set_filter_func(child => {
+            const query = iconSearch.get_text().trim().toLowerCase();
+            return !query || child._searchText?.includes(query);
+        });
+        iconSearch.connect('search-changed', () => iconGallery.invalidate_filter());
+        iconGallery.connect('child-activated', (_gallery, child) => {
+            if (child?._iconName)
+                settings.set_string('menu-icon', child._iconName);
+        });
+        settings.connect('changed::menu-icon', updateGallerySelection);
+
+        const iconGalleryScroll = new Gtk.ScrolledWindow({
+            min_content_height: 250,
+            max_content_height: 380,
+            hscrollbar_policy: Gtk.PolicyType.NEVER,
+            vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+            child: iconGallery,
+        });
+        iconGalleryScroll.add_css_class('appmenu-icon-gallery-scroll');
+        appearanceGroup.add(new Adw.ActionRow({
+            title: _('Icon'),
+            subtitle: _('Choose an icon from the visual gallery below.'),
+        }));
+        appearanceGroup.add(iconSearch);
+        appearanceGroup.add(iconGalleryScroll);
+        populateIconGallery();
 
         // Patch the icon list once the async load completes (covers the common case
         // where the user opens preferences before icons.json has been read).
@@ -119,15 +216,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
             if (!_iconsLoadFinished)
                 return GLib.SOURCE_CONTINUE;
 
-            if (ICONS_DATA.length !== iconTitles.get_n_items()) {
-                iconTitles.splice(
-                    0,
-                    iconTitles.get_n_items(),
-                    ICONS_DATA.map(icon => icon.title),
-                );
-            }
-            rebuildIconMap();
-            applyIconSelection();
+            populateIconGallery();
             _iconsPolling = false;
             _iconsTimeoutId = 0;
             return GLib.SOURCE_REMOVE;
@@ -142,20 +231,6 @@ export default class AppMenuPreferences extends ExtensionPreferences {
                 _iconsTimeoutId = 0;
             }
         });
-
-        iconRow.connect('notify::selected', () => {
-            const selected = ICONS_DATA[iconRow.selected];
-            if (selected) {
-                settings.set_string('menu-icon', deriveIconName(selected.path));
-            }
-        });
-
-        settings.connect('changed::menu-icon', () => {
-            const name = settings.get_string('menu-icon');
-            iconRow.selected = (iconMap[name] !== undefined) ? iconMap[name] : 0;
-        });
-
-        appearanceGroup.add(iconRow);
 
         // Icon size
         const iconSizeRow = new Adw.SpinRow({
