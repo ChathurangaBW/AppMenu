@@ -6,7 +6,7 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.6-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.6.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -148,7 +148,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.6.zip`
+- `AppMenu-e.g.o-upload-v5.6.1.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -156,12 +156,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.6.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.6.1.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.6-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.6-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.6_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.6.zip`: source snapshot
+- `AppMenu-v5.6.1-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.6.1-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.6.1_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.6.1.zip`: source snapshot
 
 ### From Source
 

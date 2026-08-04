@@ -341,7 +341,6 @@ export class MenuManager {
             // App menu cache — avoid rebuild when same app stays focused
             this._lastAppId = null;
             this._lastAppMenuData = null;
-            this._lastWindowId = null;
             this._lastRealMenuKey = null;
             this._lastDiagnostics = null;
 
@@ -356,13 +355,11 @@ export class MenuManager {
                     this._cachedMenuIcon = this._settings.get_string('menu-icon');
                     // Rebuild immediately so preferences do not require a focus change.
                     this._lastAppId = null;
-                    this._lastWindowId = null;
                     this._lastRealMenuKey = null;
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
                 this._settings.connect('changed::use-real-menus', () => {
                     this._lastAppId = null;
-                    this._lastWindowId = null;
                     this._lastRealMenuKey = null;
                     this._realMenuManager.invalidate();
                     this.updateMenuForWindow(global.display.get_focus_window(), true);
@@ -370,7 +367,6 @@ export class MenuManager {
                 this._settings.connect('changed::icon-size', () => {
                     this._cachedIconSize = Math.max(12, Math.min(36, this._settings.get_int('icon-size') || 22));
                     this._lastAppId = null;
-                    this._lastWindowId = null;
                     if (this._buttons.length > 0) {
                         const btn0 = this._buttons[0];
                         if (btn0._isIcon && btn0._titleWidget) {
@@ -547,7 +543,6 @@ export class MenuManager {
         }
 
         const currentAppId = detectedApp ? detectedApp.get_id() : null;
-        const currentWindowId = window?.get_id?.() ?? null;
         const wmClass = window?.get_wm_class?.() ?? '';
             const realMenuData = this._realMenuManager.updateForWindow(window, appName, detectedApp, wmClass);
             const realMenuKey = realMenuData?.registrationKey ?? null;
@@ -565,7 +560,6 @@ export class MenuManager {
         // Skip rebuild if the effective menu state is unchanged
         if (!force
             && currentAppId === this._lastAppId
-            && currentWindowId === this._lastWindowId
             && realMenuKey === this._lastRealMenuKey
             && this._lastAppMenuData) {
             if (this._buttons.length > 0) {
@@ -668,7 +662,6 @@ export class MenuManager {
         // Cache app menu data
         this._lastAppId = currentAppId;
         this._lastAppMenuData = appChildren;
-        this._lastWindowId = currentWindowId;
         this._lastRealMenuKey = realMenuKey;
 
         const newMenuData = [

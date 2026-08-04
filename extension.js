@@ -20,6 +20,7 @@ export default class AppMenuExtension extends Extension {
         this._settings = null;
         this._focusTimeoutId = 0;
         this._focusedWindow = null;
+        this._hasMenuFocusState = false;
         this._userSwitcherController = null;
         this._workspaceIndicatorController = null;
         this._searchShortcutInstalled = false;
@@ -33,6 +34,7 @@ export default class AppMenuExtension extends Extension {
         debug('Enabling extension.');
 
         this._focusedWindow = null;
+        this._hasMenuFocusState = false;
 
         const uuid = this.metadata.uuid || 'appmenu@ChathurangaBW.github.io';
         this._removeStalePanelButtons(uuid);
@@ -119,17 +121,15 @@ export default class AppMenuExtension extends Extension {
             ? this._settings.get_boolean('lock-to-focused-app')
             : true;
 
-        if (lockEnabled) {
-            if (window === this._focusedWindow)
-                return;
-            if (window === null)
-                return;
-            this._focusedWindow = window;
-        } else {
-            this._focusedWindow = window;
-        }
+        if (lockEnabled && this._hasMenuFocusState && window === this._focusedWindow)
+            return;
 
-        this._menuManager.updateMenuForWindow(window);
+        // Mutter can report no focused window during Wayland focus transitions.
+        // Reflect that state as Desktop instead of leaving the previous app menu stale.
+        this._focusedWindow = window;
+        this._hasMenuFocusState = true;
+        debug(`Updating menu for ${window?.get_title?.() || 'Desktop'}.`);
+        this._menuManager.updateMenuForWindow(window, true);
     }
 
     _scheduleMenuUpdate() {
@@ -161,6 +161,7 @@ export default class AppMenuExtension extends Extension {
         }
 
         this._focusedWindow = null;
+        this._hasMenuFocusState = false;
 
         if (this._menuManager) {
             this._menuManager.destroy();

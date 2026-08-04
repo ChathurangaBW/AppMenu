@@ -395,7 +395,6 @@ export class RealMenuManager {
         this._currentGtkContext = null;
         this._cachedActions = null;
         this._cachedWinActions = null;
-        this._lastWmClass = null;
         this._registrarFailed = false;
         this._isWayland = (GLib.getenv('XDG_SESSION_TYPE') ?? '').toLowerCase() === 'wayland';
     }
@@ -411,7 +410,6 @@ export class RealMenuManager {
     invalidate() {
         this._cachedActions = null;
         this._cachedWinActions = null;
-        this._lastWmClass = null;
         this._registrarFailed = false;
         this._setBackend(null, null);
     }
@@ -419,7 +417,6 @@ export class RealMenuManager {
     destroy() {
         this._cachedActions = null;
         this._cachedWinActions = null;
-        this._lastWmClass = null;
         this._registrarFailed = false;
         this._setBackend(null, null);
         this._settings = null;
@@ -451,12 +448,8 @@ export class RealMenuManager {
                 this._registrarFailed = true;
         }
 
-        // 2) GTK actions — cached per wmClass, no D-Bus rescan on every focus
-        if (wmClass && wmClass === this._lastWmClass && this._currentGtkContext) {
-            return this.buildCurrentMenuModel(appName);
-        }
-        this._lastWmClass = wmClass;
-
+        // 2) GTK actions — re-evaluate on focus changes because windows from the
+        // same app can expose different per-window actions on Wayland.
         let gtkContext = this._lookupGtkAppContext(detectedApp);
         if (!gtkContext && wmClass) {
             gtkContext = this._lookupGtkAppContext({ get_id: () => wmClass });
