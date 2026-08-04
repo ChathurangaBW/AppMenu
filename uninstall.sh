@@ -45,7 +45,7 @@ echo "Starting uninstallation of AppMenu"
 echo "--------------------------------------------------"
 
 echo "Disabling the extension..."
-gnome-extensions disable "$EXTENSION_UUID" 2>/dev/null
+gnome-extensions disable "$EXTENSION_UUID" 2>/dev/null || true
 
 echo "Deleting extension directory..."
 rm -rf "$EXTENSION_DIR"

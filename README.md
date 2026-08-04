@@ -6,11 +6,11 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.4-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.5-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
-> **Note:** AppMenu is commonly referred to as the **global menu** for GNOME Shell. It is a macOS-style **global menu bar** (one menu bar across the top panel that reflects the focused app) plus an Apple menu, Spotlight-style search, user switching, workspace controls, and a system menu — all in a single zero-dependency extension. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
+> **Note:** AppMenu is commonly referred to as the **global menu** for GNOME Shell. It is a macOS-style **global menu bar** (one menu bar across the top panel that reflects the focused app) plus an Apple menu with system actions, Spotlight-style search, user switching, and workspace controls — all in a single zero-dependency extension. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
 
 > **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is still present and shadowing your updated install. Run `bash install.sh --clean-stale` to remove it automatically, or see the [troubleshooting section](#i18njs-missing-from-usrlocalshare) below for manual cleanup.
 
@@ -34,7 +34,7 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 
 | Project | What it does | How AppMenu relates |
 |---|---|---|
-| **AppMenu** (this repo) | One global menu bar across all of GNOME Shell, plus Apple menu, search, user switching, workspace indicator, and a system menu | The modern, zero-dependency global menu for GNOME 45–50 |
+| **AppMenu** (this repo) | One global menu bar across all of GNOME Shell, plus Apple menu, search, user switching, and workspace indicator | The modern, zero-dependency global menu for GNOME 45–50 |
 | global-menu-for-gnome | Generic global menu bar with a system menu | AppMenu is a superset (everything it has, plus real menus, search, user switcher, workspace indicator, i18n) |
 | Fildem | Qt/GTK HUD with dbusmenu backend | AppMenu achieves the same coverage without the Python appmenu daemon |
 | Kiwi Menu | macOS-style menu bar | AppMenu ships that menu bar plus more utilities |
@@ -47,7 +47,7 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 - Dynamic app menu (global menu) based on the focused window
 - Optional real D-Bus app menu import for supported apps
 - File, Edit, View, Go, Window, and Help menus
-- System menu in the panel: Terminal, Software Center, System Monitor, Extensions, App Grid, Force Quit, Sleep, Restart, Shut Down, Lock Screen, Log Out
+- System actions in the Apple menu: Force Quit, Sleep, Restart, Shut Down, Lock Screen, and Log Out
 - Workspace navigation and window-to-workspace actions
 - Optional workspace navigation dots in the panel
 - Spotlight-style search dialog for apps, recent files, and settings
@@ -126,7 +126,7 @@ AppMenu, global-menu-for-gnome, Fildem, and Kiwi Menu are all "global menu" exte
 | Fast user switching | Yes | No | No | No |
 | Workspace indicator/actions | Yes | No | No | No |
 | Spotlight-style search | Yes | HUD only | No | No |
-| System menu (Terminal, Software Center, Power) | Yes | No | Yes | No |
+| System actions (Force Quit, Power, Session) | Yes | No | Yes | No |
 | Custom user-defined menus | Yes | No | Yes | No |
 | i18n / translations | Yes | No | No | No |
 | One-shot installers (.run, .bin, .deb) | Yes | Yes | No | No |
@@ -147,7 +147,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.4.zip`
+- `AppMenu-e.g.o-upload-v5.5.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -155,12 +155,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.4.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.5.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.4-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.4-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.3.2_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.4.zip`: source snapshot
+- `AppMenu-v5.5-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.5-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.5_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.5.zip`: source snapshot
 
 ### From Source
 

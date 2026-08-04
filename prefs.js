@@ -9,6 +9,7 @@ import { _, initI18n } from './i18n.js';
 // The Icon selector renders an empty list until the load completes, then patches itself.
 let ICONS_DATA = [];
 let _iconsLoadStarted = false;
+let _iconsLoadFinished = false;
 
 function _ensureIconsLoading() {
     if (_iconsLoadStarted)
@@ -25,6 +26,7 @@ function _ensureIconsLoading() {
     }
     if (!iconPath) {
         ICONS_DATA = [];
+        _iconsLoadFinished = true;
         return;
     }
     const file = Gio.File.new_for_path(iconPath);
@@ -36,6 +38,7 @@ function _ensureIconsLoading() {
                 ICONS_DATA = Array.isArray(data) ? data : [];
             }
         } catch (_e) { /* icons.json unavailable — use empty list */ }
+        _iconsLoadFinished = true;
     });
 }
 
@@ -113,11 +116,16 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         const _iconsLoadCheck = () => {
             if (!_iconsPolling)
                 return GLib.SOURCE_REMOVE;
-            // Detect a populated ICONS_DATA array by watching the length change.
-            if (ICONS_DATA.length === iconTitles.get_n_items())
+            if (!_iconsLoadFinished)
                 return GLib.SOURCE_CONTINUE;
-            iconTitles.splice(0, iconTitles.get_n_items());
-            ICONS_DATA.forEach(icon => iconTitles.append(icon.title));
+
+            if (ICONS_DATA.length !== iconTitles.get_n_items()) {
+                iconTitles.splice(
+                    0,
+                    iconTitles.get_n_items(),
+                    ICONS_DATA.map(icon => icon.title),
+                );
+            }
             rebuildIconMap();
             applyIconSelection();
             _iconsPolling = false;
@@ -153,11 +161,11 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         const iconSizeRow = new Adw.SpinRow({
             title: _('Icon Size'),
             subtitle: _('Panel icon size in pixels (12–36).'),
-            value: settings.get_int('icon-size') || 22,
             adjustment: new Gtk.Adjustment({lower: 12, upper: 36, step_increment: 2}),
         });
+        iconSizeRow.set_value(Math.max(12, Math.min(36, settings.get_int('icon-size') || 22)));
         iconSizeRow.connect('notify::value', () => {
-            settings.set_int('icon-size', iconSizeRow.get_value());
+            settings.set_int('icon-size', Math.round(iconSizeRow.get_value()));
         });
         settings.connect('changed::icon-size', () => {
             iconSizeRow.set_value(settings.get_int('icon-size') || 22);

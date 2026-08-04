@@ -1,8 +1,18 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import Dbusmenu from 'gi://Dbusmenu?version=0.4';
 import * as Logger from './logger.js';
 import { _ } from './i18n.js';
+
+// dbusmenu is optional. Fedora minimal installations and GTK-action-only apps
+// must still be able to load AppMenu without the typelib installed.
+let Dbusmenu = null;
+try {
+    const GIRepository = imports.gi.GIRepository;
+    GIRepository.Repository.dup_default().require('Dbusmenu', '0.4', 0);
+    Dbusmenu = imports.gi.Dbusmenu;
+} catch (_e) {
+    Logger.debug('Dbusmenu typelib unavailable; using GTK actions and fallback menus.');
+}
 
 const REGISTRAR_BUS_NAME = 'com.canonical.AppMenu.Registrar';
 const REGISTRAR_OBJECT_PATH = '/com/canonical/AppMenu/Registrar';
@@ -198,6 +208,22 @@ function _isVisible(item) {
         || item.property_get_bool(Dbusmenu.MENUITEM_PROP_VISIBLE);
 }
 
+function _unpackGtkActionDetails(details) {
+    if (Array.isArray(details)) {
+        return {
+            enabled: Boolean(details[0]),
+            parameterType: String(details[1] ?? ''),
+            state: details[2],
+        };
+    }
+
+    return {
+        enabled: details?.enabled !== false,
+        parameterType: String(details?.['parameter-type'] ?? ''),
+        state: details?.state,
+    };
+}
+
 function _isEnabled(item) {
     return !item.property_exist(Dbusmenu.MENUITEM_PROP_ENABLED)
         || item.property_get_bool(Dbusmenu.MENUITEM_PROP_ENABLED);
@@ -348,10 +374,7 @@ function _probeGtkActions(busName, objectPath, activate = false) {
         if (!descriptions || Object.keys(descriptions).length === 0)
             return null;
         return Object.entries(descriptions)
-            .map(([name, details]) => ({
-                name, objectPath, enabled: Boolean(details[0]),
-                parameterType: String(details[1] ?? ''), state: details[2],
-            }))
+            .map(([name, details]) => ({name, objectPath, ..._unpackGtkActionDetails(details)}))
             .filter(a => a.parameterType === '');
     } catch (_e) {
         return null;
@@ -606,6 +629,9 @@ export class RealMenuManager {
     // ── D-Bus lookups ──────────────────────────────────────────────────
 
     _lookupRegistration(window) {
+        if (!Dbusmenu)
+            return null;
+
         let windowId = 0;
         try {
             windowId = window?.get_id?.() ?? 0;
@@ -748,9 +774,7 @@ export class RealMenuManager {
                 .map(([name, details]) => ({
                     name,
                     objectPath: context.objectPath,
-                    enabled: Boolean(details[0]),
-                    parameterType: String(details[1] ?? ''),
-                    state: details[2],
+                    ..._unpackGtkActionDetails(details),
                 }))
                 .filter(action => action.parameterType === '');
         } catch (e) {
@@ -850,14 +874,14 @@ export class RealMenuManager {
         if (hasSubmenu) {
             return {
                 type: 'submenu',
-                label: _('More'),
+                label: label || _('More'),
                 children,
                 onOpen: () => this._aboutToShow(item),
             };
         }
 
         return {
-            label: _('Untitled'),
+            label: label || _('Untitled'),
             sensitive: _isEnabled(item),
             ornament: _getOrnament(item),
             activate: () => this._activateItem(item),

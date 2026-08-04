@@ -9,7 +9,6 @@ import { setLoggerSettings, debug } from './logger.js';
 import { disposeViewActions } from './actions/viewActions.js';
 import { WorkspaceIndicatorController } from './workspaceIndicator.js';
 import { toggleSearchDialog, destroySearchDialog } from './searchDialog.js';
-import { SystemMenuButton } from './systemMenuButton.js';
 import { initI18n } from './i18n.js';
 
 const FOCUS_DEBOUNCE_MS = 50;
@@ -24,7 +23,6 @@ export default class AppMenuExtension extends Extension {
         this._userSwitcherController = null;
         this._workspaceIndicatorController = null;
         this._searchShortcutInstalled = false;
-        this._systemMenuButton = null;
         this._overviewHidden = false;
     }
 
@@ -37,6 +35,7 @@ export default class AppMenuExtension extends Extension {
         this._focusedWindow = null;
 
         const uuid = this.metadata.uuid || 'appmenu@ChathurangaBW.github.io';
+        this._removeStalePanelButtons(uuid);
         this._menuManager = new MenuManager(uuid, this._settings);
 
         const initialWindow = global.display.get_focus_window();
@@ -46,13 +45,10 @@ export default class AppMenuExtension extends Extension {
             this._scheduleMenuUpdate();
         }, this);
 
-        this._syncSystemMenu();
         this._syncOverviewButton();
 
         this._settingsChangedId = this._settings.connect('changed', (_s, key) => {
-            if (key === 'show-os-icon') {
-                this._syncSystemMenu();
-            } else if (key === 'hide-overview-button') {
+            if (key === 'hide-overview-button') {
                 this._syncOverviewButton();
             }
         });
@@ -62,14 +58,22 @@ export default class AppMenuExtension extends Extension {
         this._addSearchKeybinding();
     }
 
-    _syncSystemMenu() {
-        let shouldShow = this._settings.get_boolean('show-os-icon');
-        if (shouldShow && !this._systemMenuButton) {
-            this._systemMenuButton = new SystemMenuButton(this._settings, this.path);
-            Main.panel.addToStatusArea('appmenu-system', this._systemMenuButton, 0, 'left');
-        } else if (!shouldShow && this._systemMenuButton) {
-            this._systemMenuButton.destroy();
-            this._systemMenuButton = null;
+    _removeStalePanelButtons(uuid) {
+        const statusArea = Main.panel?.statusArea;
+        if (!statusArea) return;
+
+        for (const name of Object.keys(statusArea)) {
+            if (name !== 'appmenu-system'
+                && name !== 'AppMenuUserSwitcher'
+                && name !== 'AppMenuWorkspaceIndicator'
+                && !name.startsWith(`${uuid}-`))
+                continue;
+
+            try {
+                statusArea[name]?.destroy();
+            } catch (e) {
+                debug(`Could not remove stale panel button ${name}: ${e}`);
+            }
         }
     }
 
@@ -171,11 +175,6 @@ export default class AppMenuExtension extends Extension {
         if (this._workspaceIndicatorController) {
             this._workspaceIndicatorController.destroy();
             this._workspaceIndicatorController = null;
-        }
-
-        if (this._systemMenuButton) {
-            this._systemMenuButton.destroy();
-            this._systemMenuButton = null;
         }
 
         if (this._settings && this._settingsChangedId) {

@@ -77,8 +77,9 @@ async function getRemovableDrives() {
                                 if (line.includes('IdUsage=') && line.includes('filesystem')) {
                                     currentDrive.name = currentDrive.device;
                                 }
-                                if (line.includes('HintSystem=true')) {
-                                    currentDrive.isRemovable = false;
+                                if (/\b(Removable|MediaRemovable)=true\b/i.test(line)
+                                    || /\bHintSystem=false\b/i.test(line)) {
+                                    currentDrive.isRemovable = true;
                                 }
                                 if (line.includes('Size=') && !line.includes('PartitionSize')) {
                                     const match = line.match(/Size=(\d+)/);

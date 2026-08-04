@@ -19,8 +19,8 @@
     </key>
     <key name="show-os-icon" type="b">
       <default>true</default>
-      <summary>Show System Menu</summary>
-      <description>Show the system menu (logo) button in the top panel with quick-launch utilities.</description>
+      <summary>Show OS Icon</summary>
+      <description>Show the Apple or distribution logo button in the top panel.</description>
     </key>
     <key name="show-user-switcher" type="b">
       <default>true</default>
@@ -64,75 +64,6 @@
       <description>Panel icon size in pixels (12–36).</description>
     </key>
 
-    <!-- System menu launchers -->
-    <key name="show-terminal" type="b">
-      <default>true</default>
-      <summary>Show Terminal in System Menu</summary>
-      <description>Show a Terminal launcher in the system menu.</description>
-    </key>
-    <key name="terminal-command" type="s">
-      <default>''</default>
-      <summary>Terminal Command</summary>
-      <description>Custom terminal command. Leave empty for automatic detection (ptyxis, gnome-terminal, etc.).</description>
-    </key>
-    <key name="show-software-center" type="b">
-      <default>true</default>
-      <summary>Show Software Center in System Menu</summary>
-      <description>Show a Software Center launcher in the system menu.</description>
-    </key>
-    <key name="software-center-command" type="s">
-      <default>''</default>
-      <summary>Software Center Command</summary>
-      <description>Custom software center command. Leave empty for automatic detection.</description>
-    </key>
-    <key name="show-system-monitor" type="b">
-      <default>true</default>
-      <summary>Show System Monitor in System Menu</summary>
-      <description>Show a System Monitor launcher in the system menu.</description>
-    </key>
-    <key name="system-monitor-command" type="s">
-      <default>''</default>
-      <summary>System Monitor Command</summary>
-      <description>Custom system monitor command. Leave empty for automatic detection.</description>
-    </key>
-    <key name="show-extensions-app" type="b">
-      <default>false</default>
-      <summary>Show Extensions in System Menu</summary>
-      <description>Show an Extensions launcher in the system menu.</description>
-    </key>
-    <key name="extensions-app-id" type="s">
-      <default>'org.gnome.Extensions.desktop'</default>
-      <summary>Extensions App ID</summary>
-      <description>Desktop ID for the extensions application.</description>
-    </key>
-    <key name="show-app-grid" type="b">
-      <default>false</default>
-      <summary>Show App Grid in System Menu</summary>
-      <description>Show an App Grid entry in the system menu.</description>
-    </key>
-    <key name="show-force-quit" type="b">
-      <default>true</default>
-      <summary>Show Force Quit in System Menu</summary>
-      <description>Show a Force Quit entry in the system menu.</description>
-    </key>
-
-    <!-- Power / session -->
-    <key name="show-power-options" type="b">
-      <default>true</default>
-      <summary>Show Power Options</summary>
-      <description>Show Sleep, Restart, and Shut Down in the system menu.</description>
-    </key>
-    <key name="show-lock-screen" type="b">
-      <default>true</default>
-      <summary>Show Lock Screen</summary>
-      <description>Show Lock Screen in the system menu.</description>
-    </key>
-    <key name="show-log-out" type="b">
-      <default>true</default>
-      <summary>Show Log Out</summary>
-      <description>Show Log Out in the system menu.</description>
-    </key>
-
     <!-- Overview button -->
     <key name="hide-overview-button" type="b">
       <default>false</default>
@@ -140,29 +71,7 @@
       <description>Hide the GNOME Shell Activities/Overview button from the top panel.</description>
     </key>
 
-    <!-- Icon -->
-    <key name="distro-icon-name" type="s">
-      <default>''</default>
-      <summary>Distro Icon Name</summary>
-      <description>Distro name for bundled icon selection (e.g. fedora, ubuntu, debian).</description>
-    </key>
-    <key name="distro-icon-symbolic" type="b">
-      <default>true</default>
-      <summary>Use Symbolic Distro Icon</summary>
-      <description>Prefer the symbolic (monochrome) variant of the distro icon.</description>
-    </key>
-    <key name="custom-icon-path" type="s">
-      <default>''</default>
-      <summary>Custom Icon Path</summary>
-      <description>Absolute path to a custom system menu icon image.</description>
-    </key>
-
     <!-- Custom menus -->
-    <key name="system-menu-custom-items" type="s">
-      <default>'[]'</default>
-      <summary>Custom System Menu Items</summary>
-      <description>JSON array of {label, value} objects for custom system-menu launchers.</description>
-    </key>
     <key name="custom-app-menus" type="s">
       <default>'[]'</default>
       <summary>Custom Application Menus</summary>

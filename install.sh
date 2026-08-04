@@ -46,12 +46,14 @@ else
     EXTENSION_DIR="${DESTDIR:-}$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID"
 fi
 
-# Find and warn about stale copies that would shadow this install.
+# Find and warn about stale copies that would shadow this install. Keep all
+# candidates under DESTDIR during staged/package installs.
 STALE_PATHS=()
+DEST_PREFIX="${DESTDIR:-}"
 for candidate in \
-    "$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID" \
-    /usr/local/share/gnome-shell/extensions/"$EXTENSION_UUID" \
-    /usr/share/gnome-shell/extensions/"$EXTENSION_UUID"; do
+    "$DEST_PREFIX$HOME/.local/share/gnome-shell/extensions/$EXTENSION_UUID" \
+    "$DEST_PREFIX/usr/local/share/gnome-shell/extensions/$EXTENSION_UUID" \
+    "$DEST_PREFIX/usr/share/gnome-shell/extensions/$EXTENSION_UUID"; do
     if [[ "$candidate" != "$EXTENSION_DIR" && -d "$candidate" ]]; then
         STALE_PATHS+=("$candidate")
     fi
@@ -73,7 +75,9 @@ if (( ${#STALE_PATHS[@]} > 0 )); then
     if [[ "$CLEAN_STALE" -eq 1 ]]; then
         for p in "${STALE_PATHS[@]}"; do
             echo "Removing stale copy: $p"
-            rm -rf "$p"
+            if ! rm -rf "$p"; then
+                echo "Could not remove stale copy (check permissions): $p" >&2
+            fi
         done
         echo "Stale copies removed."
     else
@@ -98,7 +102,7 @@ mkdir -p "$EXTENSION_DIR"
 echo "Copying extension files..."
 for item in \
     metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js systemMenuButton.js prefs.js stylesheet.css \
+    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js stylesheet.css \
     actions menus icons icons.json locale uninstall.sh schemas; do
     cp -rv "$SOURCE_DIR/$item" "$EXTENSION_DIR/"
 done

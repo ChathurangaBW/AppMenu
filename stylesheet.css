@@ -47,10 +47,6 @@
     margin-right: 3px;
 }
 
-.appmenu-user-switcher-button + .panel-button-label {
-    margin-left: 2px;
-}
-
 .appmenu-user-switcher-menu {
     min-width: 300px;
     padding: 6px 0;

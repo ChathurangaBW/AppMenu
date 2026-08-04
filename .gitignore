@@ -1,5 +1,6 @@
 # GSettings compiled schema
 schemas/gschemas.compiled
+__pycache__/
 
 # Editor / OS
 *.swp

@@ -3,7 +3,6 @@
  * Displays user avatars in the right side of the panel with session switching.
  */
 
-import AccountsService from 'gi://AccountsService';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -15,6 +14,13 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from './i18n.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import {Avatar as UserAvatar} from 'resource:///org/gnome/shell/ui/userWidget.js';
+
+let AccountsService = null;
+try {
+    AccountsService = imports.gi.AccountsService;
+} catch (_e) {
+    // AccountsService is optional; the extension can run without user switching.
+}
 
 // Lazily import Gdm — it's only needed for session switching and may not exist
 // on non-GDM display managers (LightDM, SDDM, console-only, etc.)
@@ -81,6 +87,11 @@ export class UserSwitcherController {
     }
 
     _initUserManager() {
+        if (!AccountsService) {
+            this._updateVisibility();
+            return;
+        }
+
         this._userManager = AccountsService.UserManager.get_default();
         if (!this._userManager) {
             // UserManager unavailable — show based on setting alone after a brief delay
@@ -126,7 +137,7 @@ export class UserSwitcherController {
             ? this._settings.get_boolean('show-user-switcher')
             : true;
 
-        const shouldShow = showSetting;
+        const shouldShow = showSetting && Boolean(AccountsService);
 
         if (shouldShow && !this._userSwitcher) {
             this._userSwitcher = new UserSwitcherButton(this._extension);

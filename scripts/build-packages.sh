@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 UUID="appmenu@ChathurangaBW.github.io"
 NAME="AppMenu"
-VERSION="${APPMENU_VERSION:-5.4}"
+VERSION="${APPMENU_VERSION:-5.5}"
 DIST_DIR="$ROOT_DIR/dist"
 SCRATCH_DIR="${JCODE_SCRATCH_DIR:-$ROOT_DIR/.scratch}/appmenu-packaging"
 EXT_DIR_NAME="$UUID"
@@ -28,7 +28,7 @@ zip -r "$SOURCE_ZIP" . -x '.git/*' '.git' 'dist/*' 'dist' '.scratch/*' '.scratch
 # NOTE: gschemas.compiled intentionally omitted for the e.g.o upload package.
 zip -r "$EGO_ZIP" \
   metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js systemMenuButton.js prefs.js stylesheet.css \
+  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js stylesheet.css \
   icons.json actions menus icons locale \
   schemas/org.gnome.shell.extensions.appmenu.gschema.xml >/dev/null
 
@@ -50,6 +50,7 @@ trap cleanup EXIT
 ARCHIVE_LINE=$(awk '/^__ARCHIVE_BELOW__$/ {print NR + 1; exit 0;}' "$0")
 tail -n +"$ARCHIVE_LINE" "$0" | tar -xz -C "$WORKDIR"
 bash "$WORKDIR/appmenu@ChathurangaBW.github.io/install.sh"
+exit 0
 SH
 cat "$RUN_STAGE/install.sh" > "$RUN_INSTALLER"
 echo '__ARCHIVE_BELOW__' >> "$RUN_INSTALLER"

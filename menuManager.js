@@ -68,7 +68,7 @@ const TopLevelMenuButton = GObject.registerClass(
       this._isIcon = false;
 
       // Determine if label is an icon name (e.g. distributor-logo-ubuntu)
-      if (label && (label.includes('distributor-logo') || label.includes('-logo'))) {
+       if (label && (label.includes('distributor-logo') || label.includes('-logo') || label === DEFAULT_ICON)) {
         this._isIcon = true;
         this._iconSize = this._menuManagerInstance?._cachedIconSize ?? 22;
         this._titleWidget = new St.Icon({
@@ -145,10 +145,23 @@ const TopLevelMenuButton = GObject.registerClass(
 
     _loadIcon(label) {
         if (!this._titleWidget || !label) return;
+
+        if (label === DEFAULT_ICON) {
+            this._titleWidget.set_gicon(null);
+            this._titleWidget.set_icon_name(label);
+            this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
+            return;
+        }
+
         const iconFile = Gio.File.new_for_path(
             GLib.build_filenamev([EXTENSION_ICONS_DIR, `${label}.svg`]));
         if (iconFile.query_exists(null)) {
+            this._titleWidget.set_icon_name(null);
             this._titleWidget.set_gicon(Gio.FileIcon.new(iconFile));
+            this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
+        } else {
+            this._titleWidget.set_gicon(null);
+            this._titleWidget.set_icon_name(label);
             this._titleWidget.set_icon_size(this._menuManagerInstance?._cachedIconSize ?? 22);
         }
     }
@@ -337,8 +350,11 @@ export class MenuManager {
                 }),
                 this._settings.connect('changed::menu-icon', () => {
                     this._cachedMenuIcon = this._settings.get_string('menu-icon');
-                    // Invalidate app cache so slot 0 updates on next focus change
+                    // Rebuild immediately so preferences do not require a focus change.
                     this._lastAppId = null;
+                    this._lastWindowId = null;
+                    this._lastRealMenuKey = null;
+                    this.updateMenuForWindow(global.display.get_focus_window(), true);
                 }),
                 this._settings.connect('changed::use-real-menus', () => {
                     this._lastAppId = null;
