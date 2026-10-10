@@ -1,0 +1,6 @@
+c8f6efad787b2a3ecba97294fbe6b9619d0d947cfba8735437b74c620703e42d  AppMenu-e.g.o-upload-v5.7.0.zip
+547ba8ccc8adcd6959cffb642e57347069819951c9b53de642cdcb032299fa79  AppMenu-v5.7.0.zip
+9b0e989f8026ecdf9efab4e8e7e273fb7ac155c2f8d1953f77364a57a1fceda4  appmenu@ChathurangaBW.github.io.zip
+ff3e07553622406d7437187a97accfd92ee491d161b4ecb1f2a2cb106c2449e0  AppMenu-v5.7.0-linux.run
+ff3e07553622406d7437187a97accfd92ee491d161b4ecb1f2a2cb106c2449e0  AppMenu-v5.7.0-linux.bin
+6dae112fa40551b2bab65b1250348ca1e7ed37a71673b21f93df6df579236120  appmenu_5.7.0_all.deb
