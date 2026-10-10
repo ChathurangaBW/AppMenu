@@ -8,9 +8,11 @@
     "47",
     "48",
     "49",
-    "50"
+    "50",
+    "51"
   ],
   "url": "https://github.com/ChathurangaBW/AppMenu",
   "gettext-domain": "appmenu",
-  "version": 15
+  "version": 16,
+  "version-name": "5.7.0"
 }

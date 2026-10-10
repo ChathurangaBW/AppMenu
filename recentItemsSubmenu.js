@@ -7,6 +7,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import { getSeat } from './compatibility.js';
 import Shell from 'gi://Shell';
 import { _ } from './i18n.js';
 
@@ -617,7 +618,7 @@ export const RecentItemsSubmenu = GObject.registerClass(
   _getPointerPosition() {
     // GNOME 45+ deprecated global.get_pointer(); use modern seat API
     try {
-      const seat = Clutter.get_default_backend().get_default_seat();
+      const seat = getSeat();
       const device = seat.get_pointer();
       const [, x, y] = device.get_coords();
       return [x, y];

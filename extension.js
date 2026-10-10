@@ -39,7 +39,7 @@ export default class AppMenuExtension extends Extension {
 
         const uuid = this.metadata.uuid || 'appmenu@ChathurangaBW.github.io';
         this._removeStalePanelButtons(uuid);
-        this._menuManager = new MenuManager(uuid, this._settings);
+        this._menuManager = new MenuManager(uuid, this._settings, this.metadata.version);
 
         const initialWindow = global.display.get_focus_window();
         this._updateMenu(initialWindow);

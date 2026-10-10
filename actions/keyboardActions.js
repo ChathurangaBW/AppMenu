@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import * as SC from './scancodes.js';
 import * as Logger from '../logger.js';
+import { getSeat } from '../compatibility.js';
 
 // Each entry: [modifierScanCode, actionScanCode, useModifier]
 // useModifier=false means only the action key is pressed (no Ctrl/Shift/Alt held)
@@ -78,7 +79,7 @@ export function executeKeyboardAction(action, manager, targetWindow = null) {
     if (action === 'native-open-with') {
         try {
             const device = vd || (() => {
-                const seat = Clutter.get_default_backend().get_default_seat();
+                const seat = getSeat();
                 return seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             })();
             if (device) simulateNativeOpenWith(device, manager, targetWindow);
@@ -94,7 +95,7 @@ export function executeKeyboardAction(action, manager, targetWindow = null) {
 
     try {
         const device = vd || (() => {
-            const seat = Clutter.get_default_backend().get_default_seat();
+            const seat = getSeat();
             return seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         })();
         if (device) simulateShortcut(device, entry[0], entry[1], entry[2]);

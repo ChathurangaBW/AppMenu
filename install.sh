@@ -53,7 +53,7 @@ fi
 
 for item in \
     metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
+    userSwitcher.js workspaceIndicator.js searchDialog.js compatibility.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
     actions menus icons icons.json locale uninstall.sh schemas; do
     if [[ ! -e "$SOURCE_DIR/$item" ]]; then
         echo "Required extension file is missing: $SOURCE_DIR/$item" >&2
@@ -134,7 +134,7 @@ mkdir -p "$STAGING_DIR"
 echo "Copying extension files..."
 for item in \
     metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-    userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
+    userSwitcher.js workspaceIndicator.js searchDialog.js compatibility.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
     actions menus icons icons.json locale uninstall.sh schemas; do
     cp -a "$SOURCE_DIR/$item" "$STAGING_DIR/"
 done

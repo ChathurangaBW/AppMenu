@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 UUID="appmenu@ChathurangaBW.github.io"
 NAME="AppMenu"
-VERSION="${APPMENU_VERSION:-5.6.2}"
+VERSION="${APPMENU_VERSION:-5.7.0}"
 DIST_DIR="$ROOT_DIR/dist"
 SCRATCH_DIR="${JCODE_SCRATCH_DIR:-$ROOT_DIR/.scratch}/appmenu-packaging"
 EXT_DIR_NAME="$UUID"
@@ -22,7 +22,7 @@ RUNTIME_STAGE="$SCRATCH_DIR/runtime/$EXT_DIR_NAME"
 # package arbitrary workspace content such as handoff notes or other projects.
 RUNTIME_ITEMS=(
   metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js
-  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css
+  userSwitcher.js workspaceIndicator.js searchDialog.js compatibility.js logger.js i18n.js prefs.js prefs.css stylesheet.css
   icons.json actions menus icons locale install.sh uninstall.sh schemas README.md LICENSE
 )
 
@@ -72,7 +72,7 @@ git ls-files -z -- ':!dist/**' | rsync -a --from0 --files-from=- "$ROOT_DIR/" "$
 # NOTE: gschemas.compiled intentionally omitted for the e.g.o upload package.
 zip -r "$EGO_ZIP" \
   metadata.json extension.js menuManager.js realMenuManager.js recentItemsSubmenu.js documentTooltip.js \
-  userSwitcher.js workspaceIndicator.js searchDialog.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
+   userSwitcher.js workspaceIndicator.js searchDialog.js compatibility.js logger.js i18n.js prefs.js prefs.css stylesheet.css \
   icons.json actions menus icons locale \
   schemas/org.gnome.shell.extensions.appmenu.gschema.xml >/dev/null
 

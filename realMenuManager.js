@@ -290,13 +290,14 @@ function _desktopIdToBusName(appId) {
         return null;
 
     const normalized = String(appId).replace(/\.desktop$/i, '').trim();
-    return normalized.length > 0 ? normalized : null;
+    return Gio.dbus_is_name(normalized) ? normalized : null;
 }
 
 function _busNameToObjectPath(busName) {
     if (!busName)
         return null;
-    return `/${busName.replace(/\./g, '/')}`;
+    const path = `/${busName.replace(/\./g, '/').replace(/-/g, '_')}`;
+    return GLib.Variant.is_object_path(path) ? path : null;
 }
 
 // Probe only an already-owned application bus. Activating an app just to
@@ -683,7 +684,7 @@ export class RealMenuManager {
                 objectPath ?? context.objectPath,
                 GTK_ACTIONS_INTERFACE,
                 'Activate',
-                new GLib.Variant('(sav@a{sv})', [name, [], new GLib.Variant('a{sv}', {})]),
+                new GLib.Variant('(sava{sv})', [name, [], {}]),
                 null,
                 Gio.DBusCallFlags.NONE,
                 5000,

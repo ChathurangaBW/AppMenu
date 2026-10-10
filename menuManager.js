@@ -20,6 +20,8 @@ import { buildHelpMenu } from './menus/helpMenu.js';
 import { RecentItemsSubmenu } from './recentItemsSubmenu.js';
 import { RealMenuManager } from './realMenuManager.js';
 import * as Logger from './logger.js';
+import { getSeat } from './compatibility.js';
+import { parseAccelerator } from './actions/accelerator.js';
 
 // Default panel icon — `start-here-symbolic` adapts to every distro's icon theme
 const DEFAULT_ICON = 'start-here-symbolic';
@@ -286,12 +288,12 @@ const TopLevelMenuButton = GObject.registerClass(
     // v5.4: send custom keyboard shortcuts from user-defined menus
     _sendAccelerator(accel) {
         try {
-            let [success, keyval, mods] = Clutter.accelerator_parse(accel);
+            let [success, keyval, mods] = parseAccelerator(accel);
             if (!success) {
                 Logger.error(`Could not parse shortcut '${accel}'`);
                 return;
             }
-            let seat = Clutter.get_default_backend().get_default_seat();
+            let seat = getSeat();
             let vd = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             if (!vd) return;
 
@@ -300,6 +302,8 @@ const TopLevelMenuButton = GObject.registerClass(
             if (mods & Clutter.ModifierType.SHIFT_MASK) modKeys.push(Clutter.KEY_Shift_L);
             if (mods & Clutter.ModifierType.MOD1_MASK) modKeys.push(Clutter.KEY_Alt_L);
             if (mods & Clutter.ModifierType.SUPER_MASK) modKeys.push(Clutter.KEY_Super_L);
+            if (mods & Clutter.ModifierType.META_MASK) modKeys.push(Clutter.KEY_Meta_L);
+            if (mods & Clutter.ModifierType.HYPER_MASK) modKeys.push(Clutter.KEY_Hyper_L);
 
             let t = GLib.get_monotonic_time();
             modKeys.forEach(k => {
@@ -322,8 +326,9 @@ const TopLevelMenuButton = GObject.registerClass(
 );
 
 export class MenuManager {
-    constructor(uuid, settings) {
+    constructor(uuid, settings, version) {
         this.uuid = uuid;
+        this._version = version;
         this._settings = settings;
         this._buttons = [];
         this._timeoutIds = [];
@@ -419,7 +424,7 @@ export class MenuManager {
         getVirtualDevice() {
         if (!this._virtualDevice) {
             try {
-                const seat = Clutter.get_default_backend().get_default_seat();
+                const seat = getSeat();
                 this._virtualDevice = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             } catch (e) {
                 Logger.error(`Failed to create virtual device: ${e}`);
@@ -441,7 +446,7 @@ export class MenuManager {
             const lines = [
                 'AppMenu troubleshooting info',
                 `UUID: ${this.uuid}`,
-                `Extension metadata version: 7`,
+                `Extension metadata version: ${this._version ?? 'unknown'}`,
                 `GNOME Shell: ${Config.PACKAGE_VERSION ?? 'unknown'}`,
                 `Session: ${GLib.getenv('XDG_SESSION_TYPE') || 'unknown'}`,
                 `Focused app: ${info.appName ?? _('Desktop')}`,
@@ -721,6 +726,7 @@ export class MenuManager {
             this._settingsSignalIds = [];
         }
         this.clear();
+        this._virtualDevice?.run_dispose();
         this._virtualDevice = null;
         this._realMenuManager?.destroy();
         this._realMenuManager = null;

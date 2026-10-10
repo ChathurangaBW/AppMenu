@@ -4,9 +4,9 @@
 
 **A zero-dependency macOS-style global menu bar for GNOME Shell**
 
-[![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9350-blue?logo=gnome)](https://www.gnome.org/)
+[![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9351-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.6.2-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.7.0-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -34,7 +34,7 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 
 | Project | What it does | How AppMenu relates |
 |---|---|---|
-| **AppMenu** (this repo) | One global menu bar across all of GNOME Shell, plus Apple menu, search, user switching, and workspace indicator | The modern, zero-dependency global menu for GNOME 45–50 |
+| **AppMenu** (this repo) | One global menu bar across all of GNOME Shell, plus Apple menu, search, user switching, and workspace indicator | The modern, zero-dependency global menu for GNOME 45–51 |
 | global-menu-for-gnome | Generic global menu bar with a system menu | AppMenu is a superset (everything it has, plus real menus, search, user switcher, workspace indicator, i18n) |
 | Fildem | Qt/GTK HUD with dbusmenu backend | AppMenu achieves the same coverage without the Python appmenu daemon |
 | Kiwi Menu | macOS-style menu bar | AppMenu ships that menu bar plus more utilities |
@@ -56,7 +56,7 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 - Searchable visual gallery for panel icons
 - Custom user-defined menu items (commands or keyboard shortcuts)
 - Debug logging toggle for troubleshooting
-- GNOME Shell 45 to 50 support
+- GNOME Shell 45 to 51 support
 
 ## Features
 
@@ -148,7 +148,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.6.2.zip`
+- `AppMenu-e.g.o-upload-v5.7.0.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -156,12 +156,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.6.2.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.7.0.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.6.2-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.6.2-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.6.2_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.6.2.zip`: source snapshot
+- `AppMenu-v5.7.0-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.7.0-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.7.0_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.7.0.zip`: source snapshot
 
 ### From Source
 
@@ -275,13 +275,15 @@ Build release packages:
 
 ```bash
 ./scripts/build-packages.sh
-./scripts/verify-release.sh 5.6.2
+./scripts/verify-release.sh 5.7.0
 ```
 
 Generated files and SHA-256 checksums go to `dist/`. Release builds require a
 clean tracked worktree; use `APPMENU_ALLOW_DIRTY=1` only for local development
 artifacts. The verifier rejects workspace contamination, mismatched checksums,
 invalid archives, and synchronous D-Bus calls in runtime JavaScript.
+
+GNOME 51 runtime QA results and coverage limits are documented in [QA-v5.7.0.md](QA-v5.7.0.md).
 
 ## Project Structure
 

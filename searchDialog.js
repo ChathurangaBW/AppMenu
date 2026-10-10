@@ -5,6 +5,7 @@ import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
+import { boxLayout } from './compatibility.js';
 
 const RECENT_ITEMS_FILE = GLib.build_filenamev([GLib.get_user_data_dir(), 'recently-used.xbel']);
 const SEARCH_DEBOUNCE_MS = 200;
@@ -99,8 +100,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
         });
         this.contentLayout.add_child(this._entry);
 
-        this._resultsBox = new St.BoxLayout({
-            vertical: true,
+        this._resultsBox = boxLayout(true, {
             style_class: 'appmenu-search-results',
         });
         this.contentLayout.add_child(this._resultsBox);
@@ -111,9 +111,10 @@ class SearchDialog extends ModalDialog.ModalDialog {
                 if (!this._destroyed)
                     this._scheduleSearch();
             }));
-        this._clutterTextSignalIds.push(
-            clutterText.connect('key-press-event', (_actor, event) => {
+        this.connect('captured-event', (_actor, event) => {
             if (this._destroyed)
+                return Clutter.EVENT_PROPAGATE;
+            if (event.type() !== Clutter.EventType.KEY_PRESS)
                 return Clutter.EVENT_PROPAGATE;
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Escape) {
@@ -134,7 +135,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
-        }));
+        });
     }
 
     destroy() {
@@ -259,6 +260,8 @@ class SearchDialog extends ModalDialog.ModalDialog {
                     score = 0;
                 else if (haystack.includes(q))
                     score = 2;
+                else
+                    return { item, score };
                 if (item.type === 'app')
                     score -= 0.5;
                 else if (item.type === 'settings')
@@ -292,13 +295,14 @@ class SearchDialog extends ModalDialog.ModalDialog {
         this._setSelectedIndex(nextIndex);
     }
 
-    _setSelectedIndex(index) {
+    _setSelectedIndex(index, focus = true) {
         this._selectedIndex = index;
         this._resultButtons.forEach((button, idx) => {
             if (idx === index) {
                 button.add_style_class_name('selected');
                 button.add_style_pseudo_class('focus');
-                button.grab_key_focus();
+                if (focus)
+                    button.grab_key_focus();
             } else {
                 button.remove_style_class_name('selected');
                 button.remove_style_pseudo_class('focus');
@@ -320,8 +324,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
     }
 
     _emptyState() {
-        const box = new St.BoxLayout({
-            vertical: true,
+        const box = boxLayout(true, {
             style_class: 'appmenu-search-empty-state',
         });
         box.add_child(new St.Icon({
@@ -373,18 +376,16 @@ class SearchDialog extends ModalDialog.ModalDialog {
                     if (button.hover) {
                         const idx = this._resultButtons.indexOf(button);
                         if (idx >= 0)
-                            this._setSelectedIndex(idx);
+                            this._setSelectedIndex(idx, false);
                     }
                 });
 
-                const box = new St.BoxLayout({
-                    vertical: false,
+                const box = boxLayout(false, {
                     style_class: 'appmenu-search-result-content',
                 });
                 box.add_child(this._iconForItem(item));
 
-                const textBox = new St.BoxLayout({
-                    vertical: true,
+                const textBox = boxLayout(true, {
                     style_class: 'appmenu-search-result-text',
                 });
                 textBox.add_child(new St.Label({
@@ -404,7 +405,7 @@ class SearchDialog extends ModalDialog.ModalDialog {
             }
         }
 
-        this._setSelectedIndex(0);
+        this._setSelectedIndex(0, false);
     }
 
     _activate(item) {

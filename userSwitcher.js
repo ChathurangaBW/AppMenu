@@ -14,6 +14,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from './i18n.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import {Avatar as UserAvatar} from 'resource:///org/gnome/shell/ui/userWidget.js';
+import { boxLayout } from './compatibility.js';
 
 let AccountsService = null;
 try {
@@ -175,14 +176,16 @@ export const UserSwitcherButton = GObject.registerClass(
                 icon_size: 18,
                 style_class: 'appmenu-user-switcher-button',
             });
-            this.add_child(this._buttonIcon);
+            const panelBox = boxLayout(false);
+            panelBox.add_child(this._buttonIcon);
+            this.add_child(panelBox);
 
             this._usernameLabel = new St.Label({
                 text: GLib.get_user_name(),
                 style_class: 'panel-button-label',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            this.add_child(this._usernameLabel);
+            panelBox.add_child(this._usernameLabel);
 
             if (this.menu?.actor) {
                 this.menu.actor.add_style_class_name('appmenu-user-switcher-menu');
@@ -273,8 +276,7 @@ export const UserSwitcherButton = GObject.registerClass(
                     this.menu.addMenuItem(placeholder);
                 } else {
                     const gridSection = new PopupMenu.PopupMenuSection();
-                    const gridContainer = new St.BoxLayout({
-                        vertical: true,
+                    const gridContainer = boxLayout(true, {
                         style_class: 'appmenu-user-grid',
                         x_expand: true,
                     });
@@ -282,7 +284,7 @@ export const UserSwitcherButton = GObject.registerClass(
                     let currentRow = null;
                     users.forEach((user, index) => {
                         if (index % 3 === 0) {
-                            currentRow = new St.BoxLayout({vertical: false, x_expand: true});
+                            currentRow = boxLayout(false, {x_expand: true});
                             gridContainer.add_child(currentRow);
                         }
                         const userWidget = this._createUserWidget(user, currentUserName, sessionInfo);
@@ -452,8 +454,7 @@ export const UserSwitcherButton = GObject.registerClass(
 
             if (isCurrent) button.add_style_class_name('current-user');
 
-            const content = new St.BoxLayout({
-                vertical: true,
+            const content = boxLayout(true, {
                 style_class: 'appmenu-user-item-content',
                 x_align: Clutter.ActorAlign.CENTER,
             });

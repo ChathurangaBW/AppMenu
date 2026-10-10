@@ -53,8 +53,7 @@
 }
 
 .appmenu-user-grid {
-    min-width: 100%;
-    margin: 0 auto;
+    margin: 0;
 }
 
 .appmenu-user-item {
@@ -90,7 +89,6 @@
 .appmenu-user-card-avatar {
     border-radius: 999px;
     background-size: cover;
-    background-position: center;
 }
 
 .appmenu-user-card-name {

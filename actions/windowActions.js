@@ -31,7 +31,8 @@ function _moveFocusedWindowByOffset(offset) {
 function _unminimizeAll() {
     const actors = global.get_window_actors();
     actors.forEach(a => {
-        if (a.meta_window.is_minimized()) {
+        if (a.meta_window.minimized) {
+            a.meta_window.unminimize();
             a.meta_window.activate(global.get_current_time());
         }
     });
@@ -89,7 +90,7 @@ export const windowActions = {
         if (!focused) return;
         const win = focused.meta_window;
         const monitorIndex = win.get_monitor();
-        const workArea = global.display.get_monitor_work_area(monitorIndex);
+        const workArea = win.get_work_area_for_monitor(monitorIndex);
         win.move_resize_frame(
             false,
             workArea.x, workArea.y,
@@ -103,7 +104,7 @@ export const windowActions = {
         if (!focused) return;
         const win = focused.meta_window;
         const monitorIndex = win.get_monitor();
-        const workArea = global.display.get_monitor_work_area(monitorIndex);
+        const workArea = win.get_work_area_for_monitor(monitorIndex);
         win.move_resize_frame(
             false,
             workArea.x + Math.floor(workArea.width / 2), workArea.y,
