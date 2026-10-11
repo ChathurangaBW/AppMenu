@@ -10,10 +10,6 @@
 
 </div>
 
-> **Note:** AppMenu is a **global menu** for GNOME Shell: a single menu bar across the top panel that reflects the focused app (the pattern macOS calls the menu bar), plus an Apple menu with system actions, Spotlight-style search, user switching, and workspace controls — all in one extension with no background services. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
-
-> **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is shadowing your updated install. Remove system copies with your package manager or manually; `--clean-stale` only removes stale user installs.
-
 <p align="center">
   <img src="screenshot.png" alt="AppMenu global menu bar screenshot" width="900" />
 </p>
@@ -30,7 +26,7 @@ AppMenu brings a macOS-style **global menu bar** to the GNOME top panel. It prov
 
 ## Global Menu Reference
 
-In the "global menu" pattern, an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar.
+In the "global menu" pattern, an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar. (You may also find AppMenu under the names "global menu GNOME", "macOS menu bar", or "HUD menu" — it is the same project.)
 
 | Project | What it does | How AppMenu relates |
 |---|---|---|
