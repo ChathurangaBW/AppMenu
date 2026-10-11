@@ -14,7 +14,7 @@
   <img src="screenshot.png" alt="AppMenu global menu bar screenshot" width="900" />
 </p>
 
-AppMenu brings a macOS-style **global menu bar** to the GNOME top panel. It provides app-aware menus, real exported app menus where available, keyboard shortcuts, recent items, workspace controls, search, and fast user switching in a single lightweight GNOME Shell extension.
+AppMenu brings a macOS-style **global menu bar** to the GNOME top panel. Often called a **global menu** or **macOS (Mac) menu**, it provides app-aware menus, real exported app menus where available, keyboard shortcuts, recent items, workspace controls, search, and fast user switching in a single lightweight GNOME Shell extension.
 
 ## Why AppMenu
 
@@ -26,7 +26,7 @@ AppMenu brings a macOS-style **global menu bar** to the GNOME top panel. It prov
 
 ## Global Menu Reference
 
-In the "global menu" pattern, an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar. (You may also find AppMenu under the names "global menu GNOME", "macOS menu bar", or "HUD menu" — it is the same project.)
+In the "global menu" pattern, an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar. (You may also find AppMenu under the names "global menu GNOME", "macOS menu", "Mac menu", "macOS menu bar", or "HUD menu" — it is the same project.)
 
 | Project | What it does | How AppMenu relates |
 |---|---|---|
