@@ -1,4 +1,4 @@
-# AppMenu
+# Global Menu For GNOME
 
 <div align="center">
 
