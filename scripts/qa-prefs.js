@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw?version=1';
 import Gtk from 'gi://Gtk?version=4.0';
+import Gdk from 'gi://Gdk?version=4.0';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import System from 'system';
@@ -80,6 +81,44 @@ async function run() {
             reset.emit('clicked');
             assert(settings.get_value('icon-size').equal(settings.get_default_value('icon-size')));
             assert(settings.get_value('menu-icon').equal(settings.get_default_value('menu-icon')));
+        });
+        const capture = (key, modifiers) => {
+            const dialog = prefs._captureSearchShortcut(settings, window);
+            const controllers = dialog.observe_controllers();
+            for (let i = 0; i < controllers.get_n_items(); i++) {
+                const controller = controllers.get_item(i);
+                if (controller instanceof Gtk.EventControllerKey) {
+                    controller.emit('key-pressed', key, 0, modifiers);
+                    return dialog;
+                }
+            }
+            throw new Error('Shortcut controller not found');
+        };
+        await test('Search shortcut: capture and persist new combination', () => {
+            capture(Gdk.KEY_space, Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK);
+            assert(settings.get_strv('search-shortcut')[0] === '<Control><Alt>space');
+        });
+        await test('Search shortcut: cancel preserves binding; typing keys rejected', () => {
+            const before = settings.get_strv('search-shortcut')[0];
+            capture(Gdk.KEY_Escape, 0);
+            assert(settings.get_strv('search-shortcut')[0] === before);
+            const dialog = capture(Gdk.KEY_a, 0);
+            assert(settings.get_strv('search-shortcut')[0] === before);
+            dialog.destroy();
+        });
+        await test('Search shortcut: Backspace disables', () => {
+            capture(Gdk.KEY_BackSpace, 0);
+            assert(settings.get_strv('search-shortcut').length === 0);
+        });
+        await test('Search shortcut: row disable and reset buttons', () => {
+            const row = widgets.find(w => w instanceof Adw.ActionRow && w.title === 'Search shortcut');
+            const controls = children(row).filter(w => w instanceof Gtk.Button);
+            controls.find(w => w.tooltip_text === 'Reset shortcut').emit('clicked');
+            assert(settings.get_value('search-shortcut').equal(settings.get_default_value('search-shortcut')));
+            controls.find(w => w.label === 'Disable').emit('clicked');
+            assert(settings.get_strv('search-shortcut').length === 0);
+            widgets.find(w => w instanceof Gtk.Button && w.get_label() === 'Reset').emit('clicked');
+            assert(settings.get_value('search-shortcut').equal(settings.get_default_value('search-shortcut')));
         });
     } finally {
         window.destroy();

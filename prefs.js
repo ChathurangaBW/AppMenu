@@ -261,6 +261,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         });
         settings.bind('use-real-menus', realMenusRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         behaviorGroup.add(realMenusRow);
+        behaviorGroup.add(this._buildSearchShortcutRow(settings, window));
 
         // Show user switcher
         const showUserSwitcherRow = new Adw.SwitchRow({
@@ -325,6 +326,69 @@ export default class AppMenuPreferences extends ExtensionPreferences {
         return group;
     }
 
+    _buildSearchShortcutRow(settings, window) {
+        const row = new Adw.ActionRow({
+            title: _('Search shortcut'),
+            subtitle: _('Choose a shortcut that does not conflict with your applications.'),
+        });
+        const edit = new Gtk.Button({valign: Gtk.Align.CENTER});
+        const disable = new Gtk.Button({label: _('Disable'), valign: Gtk.Align.CENTER});
+        const reset = new Gtk.Button({icon_name: 'edit-undo-symbolic', tooltip_text: _('Reset shortcut'), valign: Gtk.Align.CENTER});
+        const refresh = () => {
+            const shortcut = settings.get_strv('search-shortcut')[0];
+            const [ok, key, mods] = Gtk.accelerator_parse(shortcut || '');
+            edit.label = ok ? Gtk.accelerator_get_label(key, mods) : _('Disabled');
+            disable.sensitive = Boolean(shortcut);
+        };
+        refresh();
+        const id = settings.connect('changed::search-shortcut', refresh);
+        window.connect('destroy', () => settings.disconnect(id));
+        edit.connect('clicked', () => this._captureSearchShortcut(settings, window));
+        disable.connect('clicked', () => settings.set_strv('search-shortcut', []));
+        reset.connect('clicked', () => settings.reset('search-shortcut'));
+        row.add_suffix(edit);
+        row.add_suffix(disable);
+        row.add_suffix(reset);
+        row.activatable_widget = edit;
+        return row;
+    }
+
+    _captureSearchShortcut(settings, parent) {
+        const dialog = new Gtk.Window({
+            title: _('Search shortcut'), transient_for: parent, modal: true,
+            destroy_with_parent: true, default_width: 420,
+        });
+        const label = new Gtk.Label({
+            label: _('Press your new shortcut. Escape cancels; Backspace disables it.'),
+            wrap: true, margin_top: 24, margin_bottom: 24, margin_start: 24, margin_end: 24,
+        });
+        dialog.set_child(label);
+        const controller = new Gtk.EventControllerKey();
+        controller.connect('key-pressed', (_controller, key, _code, state) => {
+            const mods = state & Gtk.accelerator_get_default_mod_mask();
+            if (key === Gdk.KEY_Escape) {
+                dialog.destroy();
+                return true;
+            }
+            if (key === Gdk.KEY_BackSpace && mods === 0) {
+                settings.set_strv('search-shortcut', []);
+                dialog.destroy();
+                return true;
+            }
+            if (!Gtk.accelerator_valid(key, mods) ||
+                !(mods & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK | Gdk.ModifierType.SUPER_MASK))) {
+                label.label = _('Use Control, Alt, or Super together with another key.');
+                return true;
+            }
+            settings.set_strv('search-shortcut', [Gtk.accelerator_name(key, mods)]);
+            dialog.destroy();
+            return true;
+        });
+        dialog.add_controller(controller);
+        dialog.present();
+        return dialog;
+    }
+
     _buildResetRow(settings) {
         const resetRow = new Adw.ActionRow({
             title: _('Reset AppMenu Settings'),
@@ -342,6 +406,7 @@ export default class AppMenuPreferences extends ExtensionPreferences {
                 'icon-size',
                 'lock-to-focused-app',
                 'use-real-menus',
+                'search-shortcut',
                 'show-user-switcher',
                 'show-workspace-indicator',
                 'workspace-indicator-position',

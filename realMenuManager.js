@@ -7,8 +7,7 @@ import { _ } from './i18n.js';
 // must still be able to load AppMenu without the typelib installed.
 let Dbusmenu = null;
 try {
-    const GIRepository = imports.gi.GIRepository;
-    GIRepository.Repository.dup_default().require('Dbusmenu', '0.4', 0);
+    imports.gi.versions.Dbusmenu = '0.4';
     Dbusmenu = imports.gi.Dbusmenu;
 } catch (_e) {
     Logger.debug('Dbusmenu typelib unavailable; using GTK actions and fallback menus.');

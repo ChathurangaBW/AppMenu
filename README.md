@@ -6,7 +6,7 @@
 
 [![GNOME](https://img.shields.io/badge/GNOME-45%E2%80%9351-blue?logo=gnome)](https://www.gnome.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v5.7.0-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
+[![Release](https://img.shields.io/badge/release-v5.7.1-orange)](https://github.com/ChathurangaBW/AppMenu/releases)
 
 </div>
 
@@ -88,6 +88,11 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 
 Open AppMenu Search from the Apple menu or with `Ctrl+Space`.
 
+Change or disable the shortcut in **Preferences → Menu Behavior → Search shortcut**.
+Click the current shortcut and press a new Control, Alt, or Super combination.
+Escape cancels; Backspace disables it. The Reset button restores `Ctrl+Space`.
+Changes take effect immediately, freeing the previous shortcut for applications.
+
 Search sources:
 
 - Installed applications
@@ -148,7 +153,7 @@ This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Waylan
 
 Use the dedicated upload package when submitting to extensions.gnome.org:
 
-- `AppMenu-e.g.o-upload-v5.7.0.zip`
+- `AppMenu-e.g.o-upload-v5.7.1.zip`
 
 This ZIP has `metadata.json` and `extension.js` at the archive root, which is required by the GNOME Extensions upload validator.
 
@@ -156,12 +161,12 @@ This ZIP has `metadata.json` and `extension.js` at the archive root, which is re
 
 Download from the [latest release](https://github.com/ChathurangaBW/AppMenu/releases):
 
-- `AppMenu-e.g.o-upload-v5.7.0.zip`: upload package for extensions.gnome.org
+- `AppMenu-e.g.o-upload-v5.7.1.zip`: upload package for extensions.gnome.org
 - `appmenu@ChathurangaBW.github.io.zip`: manual GNOME Shell extension package
-- `AppMenu-v5.7.0-linux.run`: one-shot self-extracting installer
-- `AppMenu-v5.7.0-linux.bin`: one-shot self-extracting installer alias
-- `appmenu_5.7.0_all.deb`: Debian and Ubuntu package
-- `AppMenu-v5.7.0.zip`: source snapshot
+- `AppMenu-v5.7.1-linux.run`: one-shot self-extracting installer
+- `AppMenu-v5.7.1-linux.bin`: one-shot self-extracting installer alias
+- `appmenu_5.7.1_all.deb`: Debian and Ubuntu package
+- `AppMenu-v5.7.1.zip`: source snapshot
 
 ### From Source
 
@@ -209,6 +214,14 @@ Available settings:
 Preferences are grouped into Appearance, Menu Behavior, Panel Extras, and Diagnostics sections.
 
 ## Troubleshooting
+
+### Missing Dbusmenu typelib
+
+If an older version reports `Typelib file for namespace 'Dbusmenu', version '0.4' not found`,
+upgrade to the latest release and log out/back in. Dbusmenu is optional: without it,
+AppMenu still provides GTK action menus and fallback menus. The error shown in
+[issue #3](https://github.com/ChathurangaBW/AppMenu/issues/3) was this missing typelib,
+not a missing `i18n.js` file.
 
 ### AppMenu appears to do nothing
 
@@ -275,7 +288,7 @@ Build release packages:
 
 ```bash
 ./scripts/build-packages.sh
-./scripts/verify-release.sh 5.7.0
+./scripts/verify-release.sh 5.7.1
 ```
 
 Generated files and SHA-256 checksums go to `dist/`. Release builds require a
@@ -284,6 +297,7 @@ artifacts. The verifier rejects workspace contamination, mismatched checksums,
 invalid archives, and synchronous D-Bus calls in runtime JavaScript.
 
 GNOME 51 runtime QA results and coverage limits are documented in [QA-v5.7.0.md](QA-v5.7.0.md).
+Shortcut and missing-Dbusmenu regressions are documented in [QA-v5.7.1.md](QA-v5.7.1.md).
 
 ## Project Structure
 

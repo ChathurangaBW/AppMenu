@@ -122,6 +122,27 @@ export async function run() {
             });
         }
         search.destroySearchDialog();
+        await test('Search shortcut: changes apply live, old binding released, disable works', async () => {
+            const device = manager.getVirtualDevice();
+            const opened = () => Main.layoutManager.modalDialogGroup.get_children().some(a => a._entry && !a._destroyed);
+            const press = async keys => {
+                let t = GLib.get_monotonic_time();
+                for (const key of keys) device.notify_keyval(t++, key, Clutter.KeyState.PRESSED);
+                for (const key of [...keys].reverse()) device.notify_keyval(t++, key, Clutter.KeyState.RELEASED);
+                await delay(250);
+            };
+            settings.set_strv('search-shortcut', ['<Control><Alt>space']);
+            await delay(150);
+            await press([Clutter.KEY_Control_L, Clutter.KEY_space]);
+            assert(!opened(), 'Old Ctrl+Space binding still grabbed');
+            await press([Clutter.KEY_Control_L, Clutter.KEY_Alt_L, Clutter.KEY_space]);
+            assert(opened(), 'New binding did not open search');
+            search.destroySearchDialog();
+            settings.set_strv('search-shortcut', []);
+            await delay(150);
+            await press([Clutter.KEY_Control_L, Clutter.KEY_Alt_L, Clutter.KEY_space]);
+            assert(!opened(), 'Disabled binding still active');
+        });
         await test('Search: repeated open/destroy lifecycle', () => {
             for (let i = 0; i < 3; i++) {
                 search.toggleSearchDialog();
