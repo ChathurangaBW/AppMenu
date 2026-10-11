@@ -123,7 +123,7 @@ AppMenu, global-menu-for-gnome, Fildem, and Kiwi Menu are all "global menu" exte
 | Real exported app menus (dbusmenu, org.gtk.Actions) | Yes | Yes | No | No |
 | Synthetic-action fallback when no exported menu | Yes | No | No | No |
 | Window list per app | Yes | No | No | No |
-| Quit App, App Details | Yes | No | No | No |
+| Quit App, per-app Settings | Yes | No | No | No |
 | Force Quit | Yes | No | Yes | No |
 | Recent items | Yes | No | No | Yes |
 | Fast user switching | Yes | No | No | No |
@@ -295,6 +295,7 @@ GNOME 51 runtime QA results and coverage limits are documented in [QA-v5.7.0.md]
 AppMenu/
 ├── extension.js                 # Extension lifecycle
 ├── menuManager.js               # Panel menu orchestration
+├── compatibility.js             # GNOME version compatibility helpers
 ├── searchDialog.js              # Spotlight-style search dialog
 ├── workspaceIndicator.js        # Workspace dots controller
 ├── prefs.css                    # Preferences gallery styling
@@ -304,8 +305,9 @@ AppMenu/
 ├── logger.js                    # Debug-gated logging
 ├── prefs.js                     # Preferences window
 ├── stylesheet.css               # Shell styling
+├── screenshot.png               # README screenshot
 ├── schemas/                     # GSettings schema
-├── actions/                     # Action handlers
+├── actions/                     # Action handlers (incl. accelerator parsing)
 ├── menus/                       # Menu definitions
 ├── icons/                       # SVG icons
 ├── scripts/build-packages.sh    # Release package builder
