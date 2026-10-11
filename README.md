@@ -10,7 +10,7 @@
 
 </div>
 
-> **Note:** AppMenu is commonly referred to as the **global menu** for GNOME Shell. It is a macOS-style **global menu bar** (one menu bar across the top panel that reflects the focused app) plus an Apple menu with system actions, Spotlight-style search, user switching, and workspace controls — all in a single zero-dependency extension. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
+> **Note:** AppMenu is a **global menu** for GNOME Shell: a single menu bar across the top panel that reflects the focused app (the pattern macOS calls the menu bar), plus an Apple menu with system actions, Spotlight-style search, user switching, and workspace controls — all in one extension with no background services. If you searched for "global menu GNOME", "macOS menu bar", "HUD menu", or "AppMenu", this is the same project.
 
 > **Important for Fedora and system-install users:** If GNOME Shell reports `Unable to load .../i18n.js` from `/usr/local/share` or `/usr/share`, a stale system-wide copy from an older AppMenu version is shadowing your updated install. Remove system copies with your package manager or manually; `--clean-stale` only removes stale user installs.
 
@@ -18,19 +18,19 @@
   <img src="screenshot.png" alt="AppMenu global menu bar screenshot" width="900" />
 </p>
 
-AppMenu brings a macOS-style **global menu bar** to the GNOME top panel without external daemons or background services. It provides app-aware menus, optional real exported app menus when available, keyboard shortcuts, recent items, workspace controls, search, and fast user switching in one lightweight GNOME Shell extension.
+AppMenu brings a macOS-style **global menu bar** to the GNOME top panel. It provides app-aware menus, real exported app menus where available, keyboard shortcuts, recent items, workspace controls, search, and fast user switching in a single lightweight GNOME Shell extension.
 
 ## Why AppMenu
 
-- **No external daemon**: pure GJS extension, no Python service or appmenu daemon
-- **No manual GTK module setup**: no `~/.gtkrc-2.0`, no hand-written startup helper, no extra daemon to babysit
-- **Works across app toolkits**: GTK, Qt, Electron, Flatpak, browsers, terminals, and Java apps all get the same menu actions
-- **Wayland-friendly**: uses GNOME Shell APIs and virtual keyboard events instead of X11-only menu scraping
-- **Hybrid behavior**: reads real exported menus when apps provide them, and falls back automatically when they do not
+- **No external daemon**: a pure GJS extension — no Python service, no appmenu daemon to manage
+- **No manual GTK module setup**: no `~/.gtkrc-2.0` edits, no helper scripts
+- **Broad app coverage**: GTK, Qt, Electron, Flatpak, browsers, terminals, and Java apps share the same menu bar, with graceful fallbacks where apps expose no menu data
+- **Wayland-friendly**: built on GNOME Shell APIs and virtual keyboard events, not X11-only menu scraping
+- **Hybrid menus**: reads real exported menus when apps provide them and falls back automatically when they do not
 
 ## Global Menu Reference
 
-AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means all of an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar and what GTK calls the global menubar.
+In the "global menu" pattern, an app's menus live in a single bar at the top of the screen rather than inside each app window. This is what macOS calls the menu bar.
 
 | Project | What it does | How AppMenu relates |
 |---|---|---|
@@ -38,7 +38,7 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 | global-menu-for-gnome | Generic global menu bar with a system menu | AppMenu is a superset (everything it has, plus real menus, search, user switcher, workspace indicator, i18n) |
 | Fildem | Qt/GTK HUD with dbusmenu backend | AppMenu achieves the same coverage without the Python appmenu daemon |
 | Kiwi Menu | macOS-style menu bar | AppMenu ships that menu bar plus more utilities |
-| Ubuntu's appmenu-gtk-module | Legacy X11 xtmod | AppMenu does not rely on it |
+| Ubuntu's appmenu-gtk-module | Legacy X11 module | AppMenu does not rely on it |
 
 ## Highlights
 
@@ -50,11 +50,11 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 - System actions in the Apple menu: Force Quit, Sleep, Restart, Shut Down, Lock Screen, and Log Out
 - Workspace navigation and window-to-workspace actions
 - Optional workspace navigation dots in the panel
-- Spotlight-style search dialog for apps, recent files, and settings
+- Spotlight-style search dialog for apps, recent files, and settings, with a configurable shortcut
 - Fast user switching with avatars and session badges
 - Configurable distro icon or Apple logo
 - Searchable visual gallery for panel icons
-- Custom user-defined menu items (commands or keyboard shortcuts)
+- Custom user-defined menu items (commands or keyboard shortcuts, configured via dconf JSON)
 - Debug logging toggle for troubleshooting
 - GNOME Shell 45 to 51 support
 
@@ -62,10 +62,10 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 
 ### Apple Menu
 
-- About This Computer
+- About This System
 - AppMenu Status with current app, menu source, and copyable troubleshooting info
 - System Settings
-- App Store
+- Software
 - Recent Items
 - Search
 - Force Quit
@@ -76,22 +76,19 @@ AppMenu is the **global menu** for GNOME Shell. The "global menu" pattern means 
 
 | Menu | What it includes |
 |---|---|
-| **App** | About, New Window, App Details, Quit, open windows list |
-| **File** | New Folder, New Tab, Open, Open With, Print, Get Info, Rename, Find, Trash, Eject |
+| **App** | About, Settings, Hide / Hide Others / Show All, open windows list, New Window, Quit |
+| **File** | Open Home, New Folder, New Tab, Open, Open With, Print, Get Info, Rename, Find, Move to Trash, Eject, Close Window |
 | **Edit** | Undo, Redo, Cut, Copy, Paste, Delete, Select All, Emoji & Symbols |
-| **View** | Icon/List view, sorting, reverse sort, path bar, hidden files, full screen |
-| **Go** | Back, Forward, Recents, Documents, Desktop, Downloads, Home, Computer, Network |
-| **Window** | Minimize, Maximize, Tile, workspace switching, move window between workspaces, close |
-| **Help** | Feedback and GNOME Help |
+| **View** | As Icons / As List, sorting, reverse sort order, path bar toggle, hidden files, full screen |
+| **Go** | Back, Forward, Recents, Documents, Desktop, Downloads, Home, Computer, Network, Applications, Utilities |
+| **Window** | Minimize, Maximize, Tile Left / Right, workspace switching, move window between workspaces, Bring All to Front, Close |
+| **Help** | Send Feedback |
 
 ### Spotlight-Style Search
 
 Open AppMenu Search from the Apple menu or with `Ctrl+Space`.
 
-Change or disable the shortcut in **Preferences → Menu Behavior → Search shortcut**.
-Click the current shortcut and press a new Control, Alt, or Super combination.
-Escape cancels; Backspace disables it. The Reset button restores `Ctrl+Space`.
-Changes take effect immediately, freeing the previous shortcut for applications.
+Change or disable the shortcut in **Preferences → Menu Behavior → Search shortcut**. Click the current shortcut and press a new Control, Alt, or Super combination. Escape cancels; Backspace disables it. The Reset button restores `Ctrl+Space`. Changes take effect immediately, freeing the previous shortcut for applications.
 
 Search sources:
 
@@ -114,7 +111,7 @@ Enable **Show Workspace Indicator** in preferences to show workspace navigation 
 
 ## AppMenu vs Other GNOME Menu Extensions
 
-AppMenu, global-menu-for-gnome, Fildem, and Kiwi Menu are all "global menu" extensions for GNOME Shell. They all deliver a single menu bar at the top of the screen instead of per-window menus. AppMenu is the modern, zero-dependency, full-featured option.
+AppMenu, global-menu-for-gnome, Fildem, and Kiwi Menu are all "global menu" extensions for GNOME Shell: a single menu bar at the top of the screen instead of per-window menus. AppMenu is the modern, zero-dependency, full-featured option.
 
 | Feature | AppMenu | Fildem | global-menu-for-gnome | Kiwi Menu |
 |---|---:|---:|---:|---:|
@@ -137,13 +134,13 @@ AppMenu, global-menu-for-gnome, Fildem, and Kiwi Menu are all "global menu" exte
 | i18n / translations | Yes | No | No | No |
 | One-shot installers (.run, .bin, .deb) | Yes | Yes | No | No |
 | Stale-copy detection (`--clean-stale`) | Yes | No | No | No |
-| GNOME Shell 45 to 50 support | Yes | Yes | Yes | Yes |
+| GNOME Shell 45 to 51 support | Yes | Yes | Yes | Yes |
 
-AppMenu now uses a **hybrid approach**:
+AppMenu uses a **hybrid approach**:
 
-- for apps that export Canonical dbusmenu data, AppMenu can read and trigger the real menu items
-- for modern GTK and libadwaita apps that expose `org.gtk.Actions`, AppMenu can build native action-backed menus without synthetic key presses
-- for apps that expose neither path, AppMenu falls back to stable cross-app actions and shortcuts
+- For apps that export Canonical dbusmenu data, AppMenu reads and triggers the real menu items
+- For modern GTK and libadwaita apps that expose `org.gtk.Actions`, AppMenu builds native action-backed menus without synthetic key presses
+- For apps that expose neither, AppMenu falls back to stable cross-app actions and shortcuts
 
 This keeps the extension useful on GTK4, Qt, Electron, Java, Flatpak, and Wayland, where full exported menu trees are often partial or absent.
 
@@ -205,6 +202,7 @@ Available settings:
 | **Icon** | Select a distro icon or Apple logo |
 | **Lock to focused app** | Keep panel app label tied to the focused app |
 | **Use real application menus** | Use dbusmenu or native GTK action exports when supported, with automatic fallback |
+| **Search shortcut** | Change, disable, or reset the shortcut that opens AppMenu Search |
 | **Show User Switcher** | Show avatar-based fast user switching |
 | **Show Workspace Indicator** | Show workspace navigation dots |
 | **Workspace Indicator Position** | Choose left or right panel placement for workspace dots |
@@ -217,11 +215,7 @@ Preferences are grouped into Appearance, Menu Behavior, Panel Extras, and Diagno
 
 ### Missing Dbusmenu typelib
 
-If an older version reports `Typelib file for namespace 'Dbusmenu', version '0.4' not found`,
-upgrade to the latest release and log out/back in. Dbusmenu is optional: without it,
-AppMenu still provides GTK action menus and fallback menus. The error shown in
-[issue #3](https://github.com/ChathurangaBW/AppMenu/issues/3) was this missing typelib,
-not a missing `i18n.js` file.
+If an older version reports `Typelib file for namespace 'Dbusmenu', version '0.4' not found`, upgrade to the latest release and log out/back in. Dbusmenu is optional: without it, AppMenu still provides GTK action menus and fallback menus. The error shown in [issue #3](https://github.com/ChathurangaBW/AppMenu/issues/3) was this missing typelib, not a missing `i18n.js` file.
 
 ### AppMenu appears to do nothing
 
@@ -291,13 +285,9 @@ Build release packages:
 ./scripts/verify-release.sh 5.7.1
 ```
 
-Generated files and SHA-256 checksums go to `dist/`. Release builds require a
-clean tracked worktree; use `APPMENU_ALLOW_DIRTY=1` only for local development
-artifacts. The verifier rejects workspace contamination, mismatched checksums,
-invalid archives, and synchronous D-Bus calls in runtime JavaScript.
+Generated files and SHA-256 checksums go to `dist/`. Release builds require a clean tracked worktree; use `APPMENU_ALLOW_DIRTY=1` only for local development artifacts. The verifier rejects workspace contamination, mismatched checksums, invalid archives, and synchronous D-Bus calls in runtime JavaScript.
 
-GNOME 51 runtime QA results and coverage limits are documented in [QA-v5.7.0.md](QA-v5.7.0.md).
-Shortcut and missing-Dbusmenu regressions are documented in [QA-v5.7.1.md](QA-v5.7.1.md).
+GNOME 51 runtime QA results and coverage limits are documented in [QA-v5.7.0.md](QA-v5.7.0.md). Shortcut and missing-Dbusmenu regressions are documented in [QA-v5.7.1.md](QA-v5.7.1.md).
 
 ## Project Structure
 
